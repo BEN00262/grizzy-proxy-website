@@ -1,6 +1,5 @@
 const { nanoid } = require('nanoid');
 
-
 const ReverseProxy = require("../../services");
 const { ProjectModel, SnapshotModel } = require("../../models");
 const { massage_error, massage_response } = require("../../utils");
@@ -8,7 +7,6 @@ const { massage_error, massage_response } = require("../../utils");
 class ProjectController {
     static async createProject(req, res) {
         try {
-
             const { project_name } = req.body;
 
             const project = await ProjectModel.create({
@@ -25,9 +23,17 @@ class ProjectController {
     static async deployProject(req, res) {
         // find a way to stream the reponse from the deployment stuff
         try {
-
             // find a way to pipe ws to this stuff :)
+            // need to actually listen to and proxy the ws from the provisioning engine
+            const { project_id } = req.params;
+            const { deploy_template, repo_url } = req.body;
 
+            await ProjectModel.findOneAndUpdate({ _id: project_id }, {
+                deploy_template, repo_url,
+            });
+
+            // pass over to the provisioning engine ( passed in the next provisioning round )
+            return massage_response({ status: true }, res);
         } catch(error) {
             return massage_error(error, res);
         }
