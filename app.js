@@ -3,6 +3,9 @@ require('dotenv').config({
 });
 
 const express = require('express');
+const mongoose = require('mongoose'); 
+
+
 const { ProjectRouter, UserRouter } = require('./routes');
 const { ForwardProxy } = require('./services');
 
@@ -22,6 +25,14 @@ app.use('/project', ProjectRouter);
 app.use('/user', UserRouter);
 
 
-server.listen(process.env.PORT || 3002, () => {
-    console.log('server started')
-});
+;(async () => {
+    try {
+        await mongoose.connect(process.env.MONGO_URI)
+
+        server.listen(process.env.PORT || 3002, () => {
+            console.log('server started')
+        });
+    } catch(error) {
+        console.log(error);
+    }
+})();
