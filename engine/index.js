@@ -31,7 +31,7 @@ class DeploymentEngine {
 
         if (port) {
             // attach the url at this point
-            ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://0.0.0.0:${port}`, {
+            ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://127.0.0.1:${port}`, {
                 // check if they want ssl enabled, if so anable
 
                 // implement later when we actually get a domain
