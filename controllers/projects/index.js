@@ -58,6 +58,7 @@ class ProjectController {
                 deployment_url: `https://${unique_project_name}.grizzy-deploy.com`
             }, res, 201);
         } catch(error) {
+            console.log(error)
             return massage_error(error, res);
         }
     }
