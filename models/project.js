@@ -1,21 +1,21 @@
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
-    local_uri: [
-        {
-            type: String,
-            unique: true
-        }
-    ],
+    // local_uri: [
+    //     {
+    //         type: String,
+    //         unique: true
+    //     }
+    // ],
 
-    public_uri: {
-        type: String,
-        unique: true
-    },
+    // public_uri: {
+    //     type: String,
+    //     unique: true
+    // },
 
-    display_name: {
+    deployment_type: {
         type: String,
-        required: true
+        enum: ['zip', 'git', 'folder']
     },
 
     // assigned by the system on creation
@@ -35,8 +35,17 @@ const projectSchema = new mongoose.Schema({
     },
 
     // template used for the deployment
-    deploy_template: {
-        type: String
+    // will be used to redeploy later on
+    template: {
+        template_name: {
+            type: String,
+            required: true
+        },
+
+        version: {
+            type: String,
+            required: true
+        }
     },
 
     owner: {

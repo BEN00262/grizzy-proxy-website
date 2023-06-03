@@ -3,23 +3,19 @@ require('dotenv').config({
 });
 
 const express = require('express');
-const mongoose = require('mongoose'); 
-
+const mongoose = require('mongoose');
+const cors = require('cors');
 
 const { ProjectRouter, UserRouter } = require('./routes');
-const { ForwardProxy } = require('./services');
+
+const PORT = process.env.PORT || 3002;
 
 const app = express();
 const server = require('http').createServer(app);
 
+app.use(cors());
 app.use(express.json())
-app.use(express.urlencoded({ extended: true }));
-
-// Proxy websockets
-server.on('upgrade', function (req, socket, head) {
-    console.log("proxying upgrade request", req.originalUrl);
-    ForwardProxy.ws(req, socket, head);
-});
+app.use(express.urlencoded({ extended: false }));
 
 app.use('/project', ProjectRouter);
 app.use('/user', UserRouter);
@@ -29,7 +25,7 @@ app.use('/user', UserRouter);
     try {
         await mongoose.connect(process.env.MONGO_URI)
 
-        server.listen(process.env.PORT || 3002, () => {
+        server.listen(PORT, () => {
             console.log('server started')
         });
     } catch(error) {

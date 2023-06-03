@@ -54,10 +54,17 @@ class UserController {
 
             const user = await UserModel.findOne({ email });
 
+            if (!user) {
+                return massage_error(
+                    new GrizzyDeployException("Account with the given credentials doesnt exist"),
+                    res, 400
+                );
+            }
+
             if (!bcrypt.compareSync(password, user?.password)) {
                 return massage_error(
                     new GrizzyDeployException("Invalid credentials"),
-                    400, res
+                    res, 400
                 );
             }
 
