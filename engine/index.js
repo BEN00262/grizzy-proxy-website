@@ -7,6 +7,7 @@ const decompress = require('decompress');
 const { SimpleHosterDocker } = require("./docker");
 const { SimpleHosterGit } = require("./git");
 const { ReverseProxy } = require('../services');
+const { GrizzyDeployException } = require('../utils');
 
 class DeploymentEngine {
     constructor() {
@@ -15,30 +16,35 @@ class DeploymentEngine {
     }
 
     async deploy(app_name, type /* git | zip | folder */, configs = {}) {
+        let port = null;
         
         switch (type) {
             case 'git':
-                await this.#deployFromGit(app_name, configs /*repo_url, template_to_use, version*/);
+                port = await this.#deployFromGit(app_name, configs /*repo_url, template_to_use, version*/);
                 break;
             case 'zip':
-                await this.#deployFromZip(app_name, configs /* zip_file_buffer, template_to_use, version */);
+                port = await this.#deployFromZip(app_name, configs /* zip_file_buffer, template_to_use, version */);
                 break;
             default:
                 throw new Error('Unsupported deployment type');
         }
 
-        // attach the url at this point
-        ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  app_name, {
-            // check if they want ssl enabled, if so anable
+        if (port) {
+            // attach the url at this point
+            ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://0.0.0.0:${port}`, {
+                // check if they want ssl enabled, if so anable
 
-            // implement later when we actually get a domain
-            // ssl: {
-            //     letsencrypt: {
-            //         email: process.env.LETSENCRYPT_EMAIL,
-            //         production: true
-            //     }
-            // }
-        })
+                // implement later when we actually get a domain
+                // ssl: {
+                //     letsencrypt: {
+                //         email: process.env.LETSENCRYPT_EMAIL,
+                //         production: true
+                //     }
+                // }
+            })
+        } else {
+            throw new GrizzyDeployException("Failed to generate port");
+        }
     }
 
     // deploy from git
@@ -61,7 +67,7 @@ class DeploymentEngine {
         );
 
         // deploy the code
-        await this.docker.createImage(
+        const port = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
             true // run by default
@@ -71,6 +77,8 @@ class DeploymentEngine {
         
         // wipe the temp directory on exit
         await cleanup();
+
+        return port;
     }
 
     // deploy from git
@@ -89,7 +97,7 @@ class DeploymentEngine {
         );
 
         // deploy the code
-        await this.docker.createImage(
+        const port = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
             true // run by default
@@ -97,6 +105,8 @@ class DeploymentEngine {
         
         // wipe the temp directory on exit
         await cleanup();
+
+        return port;
     }
 
     async #loadDeploymentTemplate(runtime, context = {}) {

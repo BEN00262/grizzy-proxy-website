@@ -19,6 +19,8 @@ class SimpleHosterDocker {
 
     // returns the port the container is running in
     async createContainerAndStart(app_name) {
+        const generated_port = await portfinder.getPortPromise();
+
         const container = await this.docker.createContainer({
             Image: app_name, // image to spin up
             ExposedPorts: {
@@ -39,7 +41,7 @@ class SimpleHosterDocker {
                 PortBindings: {
                     "3000/tcp": [{
                         "HostIP":"0.0.0.0",
-                        "HostPort": `${await portfinder.getPortPromise()}`
+                        "HostPort": `${generated_port}`
                     }]
                 }
             }
@@ -47,6 +49,8 @@ class SimpleHosterDocker {
 
         // start the container
         await container.start();
+
+        return generated_port;
     }
 
     // we want to check if there are any containers running for a given image if not recreate and then return the port of the container
@@ -148,9 +152,10 @@ class SimpleHosterDocker {
     
             // check if we have to run immediately
             if (run_immediately) {
-                return this.createContainerAndStart(app_name)
+                return await this.createContainerAndStart(app_name)
             }
 
+            return null;
         } catch (error) {
             console.log(error);
         }
