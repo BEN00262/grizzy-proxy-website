@@ -1,4 +1,5 @@
 const { nanoid } = require('nanoid');
+const { snakeCase } = require("snake-case");
 
 const ReverseProxy = require("../../services");
 const { ProjectModel } = require("../../models");
@@ -15,7 +16,7 @@ class ProjectController {
                 repo_url, template_to_use, version
             } = req.body;
 
-            const unique_project_name = `${project_name}_${nanoid(8)}`;
+            const unique_project_name = snakeCase(`${project_name}_${nanoid(8)}`);
 
             await ProjectModel.create({
                unique_name: unique_project_name,

@@ -1,6 +1,5 @@
 const Docker = require('dockerode');
 const portfinder = require('portfinder');
-const { snakeCase } = require("snake-case");
 const tar = require('tar-fs')
 
 portfinder.setBasePort(3001);
@@ -127,7 +126,7 @@ class SimpleHosterDocker {
             
             const build_stream = await this.docker.buildImage(
                 tar_stream, { 
-                    t: snakeCase(app_name), 
+                    t: app_name, 
                     forcerm: true,
                     dockerfile: "Dockerfile" 
                 },
@@ -149,7 +148,7 @@ class SimpleHosterDocker {
     
             // check if we have to run immediately
             if (run_immediately) {
-                return this.createContainerAndStart(snakeCase(app_name))
+                return this.createContainerAndStart(app_name)
             }
 
         } catch (error) {
