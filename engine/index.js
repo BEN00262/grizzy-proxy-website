@@ -1,7 +1,6 @@
 const tmp = require('tmp-promise');
 const path = require('path');
 const fs = require('fs/promises');
-const handlebars = require("handlebars");
 const decompress = require('decompress');
 
 const { SimpleHosterDocker } = require("./docker");
@@ -63,7 +62,13 @@ class DeploymentEngine {
 
         await fs.writeFile(
             path.join(directory_path, 'Dockerfile'),
-            await this.#loadDeploymentTemplate(configs.template_to_use, { version: configs.version })
+
+            // generate deployment scripts
+            await this.#loadDeploymentTemplate(
+                configs.template_to_use, 
+                directory_path, 
+                { version: configs.version }
+            )
         );
 
         // deploy the code
@@ -93,7 +98,13 @@ class DeploymentEngine {
 
         await fs.writeFile(
             path.join(directory_path, 'Dockerfile'),
-            await this.#loadDeploymentTemplate(configs.template_to_use, { version: configs.version })
+
+            // generate the deployment scripts
+            await this.#loadDeploymentTemplate(
+                configs.template_to_use, 
+                directory_path, 
+                { version: configs.version }
+            )
         );
 
         // deploy the code
@@ -109,11 +120,13 @@ class DeploymentEngine {
         return port;
     }
 
-    async #loadDeploymentTemplate(runtime, context = {}) {
-        // try to resolve the template
-        const template_path = path.join(__dirname, 'templates', `${runtime}.hbs`);
-        const template = await fs.readFile(template_path, 'utf8');
-        return handlebars.compile(template)(context)
+    async #loadDeploymentTemplate(runtime, tmp_folder, context = {}) {
+        const template = require(
+            // go to the directory where we have the templates
+            path.join(__dirname, 'templates', `${runtime}.js`)
+        );
+
+        return template.generate_deployment_script(context, tmp_folder)
     }
 }
 
