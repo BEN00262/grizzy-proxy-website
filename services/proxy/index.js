@@ -11,7 +11,7 @@ const proxy = require('redbird')({
     //     port: 443
     // },
 
-    cluster: 4
+    // cluster: 4
 });
 
 // const docker = require('redbird').docker;
