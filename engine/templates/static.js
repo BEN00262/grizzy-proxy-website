@@ -1,5 +1,5 @@
 const handlebars = require("handlebars");
-const fs = require('fs/promises');
+const fs = require('fs');
 const path = require('path');
 const { GrizzyDeployException } = require("../../utils");
 
@@ -18,7 +18,7 @@ class StaticDeployment {
         // check the version | requirements to run a node app
         // read the package.json and check if there is a start command if not throw an Exception that will bubble up
         try {
-            if (!(await fs.exists(path.join(temp_folder, 'index.html'), fs.constants.F_OK))) {
+            if (!(fs.existsSync(path.join(temp_folder, 'index.html')))) {
                 // throw an exception for this
                 throw new GrizzyDeployException("missing 'index.html' in root folder")
             }
