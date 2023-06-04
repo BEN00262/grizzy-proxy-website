@@ -38,7 +38,7 @@ class ProjectController {
                unique_name: unique_project_name,
                repo_url, deployment_type,
                template: { template_name: template_to_use, version },
-               owner: req.user._id
+            //    owner: req.user._id
             });
 
             // generate a config
