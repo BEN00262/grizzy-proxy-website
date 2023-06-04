@@ -2,12 +2,27 @@ const { nanoid } = require('nanoid');
 const { snakeCase } = require("snake-case");
 
 const ReverseProxy = require("../../services");
-const { ProjectModel } = require("../../models");
+const { ProjectModel, VersionModel } = require("../../models");
 const { massage_error, massage_response, GrizzyDeployException } = require("../../utils");
 const { DeploymentEngine } = require('../../engine');
 
+// during deployments --> we should get an archive of the container then store it in s3
+// create versions
+
 class ProjectController {
     // create and deploy a project at the same time
+    static async getProjects(req, res) {
+        try {
+
+            const projects = await ProjectModel.find({
+                owner: req.user._id
+            });
+
+            return massage_response({ projects }, res);
+        } catch(error) {
+            return massage_error(error, res);
+        }
+    }
 
     static async createProject(req, res) {
         try {
@@ -18,10 +33,12 @@ class ProjectController {
 
             const unique_project_name = snakeCase(`${project_name}_${nanoid(8)}`);
 
-            await ProjectModel.create({
+            // save the versions for this for later
+            const project = await ProjectModel.create({
                unique_name: unique_project_name,
                repo_url, deployment_type,
-               template: { template_name: template_to_use, version }
+               template: { template_name: template_to_use, version },
+               owner: req.user._id
             });
 
             // generate a config
@@ -48,7 +65,8 @@ class ProjectController {
             }
 
             // gets the logs -- we should save them i think
-            await DeploymentEngine.deploy(
+            // get the archive of the project
+            const container_archive = await DeploymentEngine.deploy(
                 unique_project_name, deployment_type, config
             );
 
@@ -94,7 +112,7 @@ class ProjectController {
                 template_to_use, version
             } = req.body;
 
-            await ProjectModel.findOneAndUpdate({ _id: project_id }, {
+            await ProjectModel.findOneAndUpdate({ _id: project_id, owner: req.user._id }, {
                 template: deploy_template, repo_url,
                 deployment_type
             });
@@ -136,50 +154,43 @@ class ProjectController {
         }
     }
 
-    static async getProjectBackups(req, res) {
+    static async getProjectVersions(req, res) {
         try {
-            // fetch snapshots attached to a given project
             const project = await ProjectModel.find({
-                project: req.params.project_id,
+                unique_name: req.params.unique_project_name,
                 owner: req.user._id
-            }).populate('snapshots');
+            }).populate('versions');
 
 
             return massage_response({ 
-                snapshots: project?.snapshots ?? [] 
+                versions: project?.versions ?? [] 
             }, res);
         } catch(error) {
             return massage_error(error, res);
         }
     }
 
-    static async registerSubdomain(req, res) {
-        try {
-            // const { unique_name, port } = req.body;
-    
-            // const assigned_url = `${unique_name}.${process.env.APP_DOMAIN}`;
-    
-            // ReverseProxy.register(assigned_url, `http://localhost:${port}`);
 
-            // await ProjectModel.findOneAndUpdate({ unique_name, owner: req.user._id }, {
-            //     public_uri: assigned_url
-            // });
-
-            // return massage_response({ assigned_url }, res, 201);
-        } catch(error) {
-            return massage_error(error, res);
-        }
-    }
-
-
+    // work on this guy
     static async deleteProject(req, res) {
         try {
-            const { project_id } = req.params;
+            const { unique_project_name } = req.params;
 
-            const project = await ProjectModel.findOne({ _id: project_id });
+            const project = await ProjectModel.findOne({ 
+                unique_name: unique_project_name,
+                owner: req.user._id
+            });
 
             if (project) {
+                // delete all the versions
+                await VersionModel.deleteMany({
+                    _id: { '$in': project.versions }
+                });
+
+                // get any running containers for this and delete them
+
                 for (const local_uri of project?.local_uri) {
+                    // find a way to properly do this
                     ReverseProxy.unregister(project?.public_uri, local_uri)
                 }
 

@@ -1,18 +1,6 @@
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
-    // local_uri: [
-    //     {
-    //         type: String,
-    //         unique: true
-    //     }
-    // ],
-
-    // public_uri: {
-    //     type: String,
-    //     unique: true
-    // },
-
     deployment_type: {
         type: String,
         enum: ['zip', 'git', 'folder']
@@ -51,7 +39,18 @@ const projectSchema = new mongoose.Schema({
     owner: {
         type: mongoose.Types.ObjectId,
         ref: 'user'
-    }
+    },
+
+    // store the latest version ( running version )
+    active_version: {
+        type: mongoose.Types.ObjectId,
+        ref: 'version'
+    },
+
+    versions: [{
+        type: mongoose.Types.ObjectId,
+        ref: 'version'
+    }]
 
 }, { timestamps: true });
 
