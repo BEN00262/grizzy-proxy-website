@@ -55,7 +55,7 @@ class ProjectController {
             // pass over to the provisioning engine ( passed in the next provisioning round )
             return massage_response({ 
                 status: true,
-                deployment_url: `https://${unique_project_name}.grizzy-deploy.com`
+                deployment_url: `http://${unique_project_name}.grizzy-deploy.com`
             }, res, 201);
         } catch(error) {
             console.log(error)
