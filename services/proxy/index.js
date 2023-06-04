@@ -1,3 +1,5 @@
+const { DomainsModel } = require('../../models');
+
 const proxy = require('redbird')({
     port: process.env.PROXY_PORT || 3001,
 
@@ -13,6 +15,18 @@ const proxy = require('redbird')({
 
     // cluster: 4
 });
+
+// re-register previously registered domains
+;(async () => {
+    const domains = await DomainsModel.find();
+
+    for (const domain of (domains ?? [])) {
+        if (domain.sub_domain && domain.port) {
+            // register them
+            proxy.register(`${domain.sub_domain}.grizzy-deploy.com`,  `http://127.0.0.1:${domain.port}`)
+        }
+    }
+})()
 
 // const docker = require('redbird').docker;
 

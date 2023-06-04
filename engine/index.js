@@ -7,6 +7,7 @@ const { SimpleHosterDocker } = require("./docker");
 const { SimpleHosterGit } = require("./git");
 const { ReverseProxy } = require('../services');
 const { GrizzyDeployException } = require('../utils');
+const { DomainsModel } = require('../models');
 
 class DeploymentEngine {
     constructor() {
@@ -30,6 +31,7 @@ class DeploymentEngine {
 
         if (port) {
             // attach the url at this point
+            // store a list of these in the db for reregistration on bootup
             ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://127.0.0.1:${port}`, {
                 // check if they want ssl enabled, if so anable
 
@@ -41,6 +43,12 @@ class DeploymentEngine {
                 //     }
                 // }
             })
+
+            // save the registration for rebootup
+            await DomainsModel.create({
+                sub_domain: app_name,
+                port
+            });
         } else {
             throw new GrizzyDeployException("Failed to generate port");
         }
