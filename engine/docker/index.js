@@ -14,6 +14,10 @@ class SimpleHosterDocker {
       this.docker = new Docker();
     }
 
+    async #loginToDockerHub() {
+        
+    }
+
     // missing functionalities
     // snapshoting and storing the snapshot in s3 | replay the snapshot later
     // TODO: implement this later on
@@ -22,13 +26,16 @@ class SimpleHosterDocker {
     async createContainerAndStart(app_name) {
         const generated_port = await portfinder.getPortPromise();
 
+        // figure out how to pass auth to use the image in dockerhub
         const container = await this.docker.createContainer({
             Image: app_name, // image to spin up
+
             ExposedPorts: {
                 "3000/tcp": {}
             },
 
             // we can also pass env keys pretty easily
+            // find a way to store env keys securely and load them to the container 
             Env: [
                 // load this secrets dynamically during deployment of a container
                 // "DBHOST=" + dbHost,
@@ -119,7 +126,7 @@ class SimpleHosterDocker {
         );
 
         // delete the associated image
-        this.docker.getImage(app_name)?.remove()
+        await this.docker.getImage(app_name)?.remove()
     }
 
     // steps
@@ -137,7 +144,12 @@ class SimpleHosterDocker {
                 tar_stream, { 
                     t: app_name, 
                     forcerm: true,
-                    dockerfile: "Dockerfile" 
+                    dockerfile: "Dockerfile",
+                    remote: `${process.env.DOCKERHUB_USERNAME}/${app_name}:latest`,
+                    authconfig: {
+                        username: process.env.DOCKERHUB_USERNAME,
+                        password: process.env.DOCKERHUB_PASSWORD,
+                    }
                 },
             );
     

@@ -31,6 +31,11 @@ const projectSchema = new mongoose.Schema({
         }
     },
 
+    // an encrypted blob that will be decrypted on runtime only
+    // env_keys: {
+
+    // },
+
     owner: {
         type: mongoose.Types.ObjectId,
         ref: 'user'
