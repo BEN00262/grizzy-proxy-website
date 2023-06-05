@@ -44,9 +44,9 @@ class SimpleHosterDocker {
                         "HostPort": `${generated_port}`
                     }]
                 },
-                RestartPolicy: {
-                    Name: 'always'
-                }
+                // RestartPolicy: {
+                //     Name: 'always'
+                // }
             }
         });
 
