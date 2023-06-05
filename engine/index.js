@@ -96,36 +96,40 @@ class DeploymentEngine {
 
     // deploy from git
     async #deployFromGit(app_name /* this is the name of the image too */, configs = {}) {
-        const { cleanup, path: directory_path } = await tmp.dir({
-            keep: false,
-            prefix:  'deploy-',
-            unsafeCleanup: true
-        });
-
-        await this.git.pullRepo(directory_path, configs.repo_url);
-
-        await fs.writeFile(
-            path.join(directory_path, 'Dockerfile'),
-
-            // generate the deployment scripts
-            await this.#loadDeploymentTemplate(
-                configs.template_to_use, 
-                directory_path, 
-                { version: configs.version }
-            )
-        );
-
-        // deploy the code
-        const port = await this.docker.createImage(
-            app_name, // name of the app to be deployed
-            directory_path, // the temp directoru holding our code while we are doing deployments
-            true // run by default
-        );
-        
-        // wipe the temp directory on exit
-        await cleanup();
-
-        return port;
+        try {
+            const { cleanup, path: directory_path } = await tmp.dir({
+                keep: false,
+                prefix:  'deploy-',
+                unsafeCleanup: true
+            });
+    
+            await this.git.pullRepo(directory_path, configs.repo_url);
+    
+            await fs.writeFile(
+                path.join(directory_path, 'Dockerfile'),
+    
+                // generate the deployment scripts
+                await this.#loadDeploymentTemplate(
+                    configs.template_to_use, 
+                    directory_path, 
+                    { version: configs.version }
+                )
+            );
+    
+            // deploy the code
+            const port = await this.docker.createImage(
+                app_name, // name of the app to be deployed
+                directory_path, // the temp directoru holding our code while we are doing deployments
+                true // run by default
+            );
+            
+            // wipe the temp directory on exit
+            await cleanup();
+    
+            return port;
+        } catch(error) {
+            console.log(error)
+        }
     }
 
     async #loadDeploymentTemplate(runtime, tmp_folder, context = {}) {
