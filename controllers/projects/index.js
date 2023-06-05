@@ -71,7 +71,9 @@ class ProjectController {
             );
 
             // update the metadata
-            const _version = await VersionModel.create({ image_version_id, logs, project: project._id })
+            const _version = await VersionModel.create({ 
+                image_version_id, logs, project: project._id 
+            })
 
             // check if this is an active release
             if (Array.isArray(ports) && ports.length /* active release */) {

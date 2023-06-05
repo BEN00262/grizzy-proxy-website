@@ -156,6 +156,8 @@ class SimpleHosterDocker {
 
             // get the image sha and return it
             const image_version_id = this.docker.getImage(app_name).id;
+
+            console.log({ image_version_id })
     
             // check if we have to run immediately
             if (run_immediately) {

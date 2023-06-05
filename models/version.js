@@ -13,7 +13,8 @@ const versionSchema = new mongoose.Schema({
 
     project: {
         type: mongoose.Types.ObjectId,
-        ref: 'project'
+        ref: 'project',
+        required: true
     }
 
 }, { timestamps: true });
