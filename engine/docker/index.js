@@ -1,6 +1,7 @@
 const Docker = require('dockerode');
 const portfinder = require('portfinder');
-const tar = require('tar-fs')
+const tar = require('tar-fs');
+const { GrizzyDeployException } = require('../../utils');
 
 portfinder.setBasePort(3001);
 
@@ -155,9 +156,11 @@ class SimpleHosterDocker {
             console.log(results)
 
             // get the image sha and return it
-            const image_version_id = (await this.docker.getImage(app_name).inspect()).Id;
+            const image_version_id = (await this.docker.getImage(app_name).inspect())?.Id;
 
-            console.log({ app_name, image_version_id })
+            if (!image_version_id) {
+                throw new GrizzyDeployException("Failed to get the deployment id");
+            }
     
             // check if we have to run immediately
             if (run_immediately) {

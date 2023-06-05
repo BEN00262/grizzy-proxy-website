@@ -27,7 +27,7 @@ const proxy = require('redbird')({
     const domains = await DomainsModel.find();
 
     for (const domain of (domains ?? [])) {
-        if (domain.sub_domain && domain.image_version_id && domain.port) {
+        if (domain.sub_domain && domain.image_version_id) {
             // we know the image stuff here i think
             // register them
 
