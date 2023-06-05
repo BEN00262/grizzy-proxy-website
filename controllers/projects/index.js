@@ -3,7 +3,7 @@ const { snakeCase } = require("snake-case");
 
 const ReverseProxy = require("../../services");
 const { ProjectModel, VersionModel } = require("../../models");
-const { massage_error, massage_response, GrizzyDeployException } = require("../../utils");
+const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName } = require("../../utils");
 const { DeploymentEngine } = require('../../engine');
 
 // during deployments --> we should get an archive of the container then store it in s3
@@ -31,7 +31,7 @@ class ProjectController {
                 repo_url, template_to_use, version
             } = req.body;
 
-            const unique_project_name = `${project_name}-${nanoid(8)}`;
+            const unique_project_name = `${project_name}-${getUniqueSubdomainName()}`.toLowerCase();
 
             // save the versions for this for later
             const project = await ProjectModel.create({

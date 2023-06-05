@@ -1,5 +1,6 @@
 const consola = require('consola');
 const jwt = require('jsonwebtoken');
+const { uniqueNamesGenerator, adjectives, colors, animals } = require('unique-names-generator');
 
 class GrizzyDeployException extends Error {
     constructor(message) {
@@ -80,5 +81,10 @@ module.exports = {
     massage_error,
     massage_response,
     signJwtToken,
-    verifyJwtToken
+    verifyJwtToken,
+    getUniqueSubdomainName: () => {
+        return uniqueNamesGenerator({
+            dictionaries: [colors, adjectives, animals]
+        }).replace("_", "-");
+    }
 }
