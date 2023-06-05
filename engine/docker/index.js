@@ -152,13 +152,25 @@ class SimpleHosterDocker {
     
             // show the build logs here ( attach a version build here )
             console.log(results)
+
+            // get the image sha and return it
+            const image_version_id = this.docker.getImage(app_name).id;
     
             // check if we have to run immediately
             if (run_immediately) {
-                return await this.createContainerAndStart(app_name)
+                return {
+                    port: await this.createContainerAndStart(app_name),
+                    image_version_id,
+                    logs: results?.map(({ stream }) => `${stream}`)
+                }
             }
 
-            return null;
+            // for scheduled deploys
+            return {
+                port: null,
+                image_version_id,
+                logs: results?.map(({ stream }) => `${stream}`)
+            };
         } catch (error) {
             console.log(error);
         }

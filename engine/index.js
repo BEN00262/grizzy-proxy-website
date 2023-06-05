@@ -8,6 +8,7 @@ const { SimpleHosterGit } = require("./git");
 const { ReverseProxy } = require('../services');
 const { GrizzyDeployException } = require('../utils');
 const { DomainsModel } = require('../models');
+const { snakeCase } = require('snake-case');
 
 class DeploymentEngine {
     constructor() {
@@ -16,23 +17,25 @@ class DeploymentEngine {
     }
 
     async deploy(app_name, type /* git | zip | folder */, configs = {}) {
-        let port = null;
+        let instance_results = {};
         
+        const _app_name = snakeCase(app_name);
+
         switch (type) {
             case 'git':
-                port = await this.#deployFromGit(app_name, configs /*repo_url, template_to_use, version*/);
+                instance_results = await this.#deployFromGit(_app_name, configs /*repo_url, template_to_use, version*/);
                 break;
             case 'zip':
-                port = await this.#deployFromZip(app_name, configs /* zip_file_buffer, template_to_use, version */);
+                instance_results = await this.#deployFromZip(_app_name, configs /* zip_file_buffer, template_to_use, version */);
                 break;
             default:
                 throw new Error('Unsupported deployment type');
         }
 
-        if (port) {
+        if (instance_results?.port) {
             // attach the url at this point
             // store a list of these in the db for reregistration on bootup
-            ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://127.0.0.1:${port}`, {
+            ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://127.0.0.1:${instance_results?.port}`, {
                 // check if they want ssl enabled, if so anable
 
                 // implement later when we actually get a domain
@@ -45,13 +48,10 @@ class DeploymentEngine {
             })
 
             // save the registration for rebootup
-            await DomainsModel.create({
-                sub_domain: app_name,
-                port
-            });
-        } else {
-            throw new GrizzyDeployException("Failed to generate port");
+            await DomainsModel.create({ sub_domain: app_name, port: instance?.ports });
         }
+
+        return instance_results;
     }
 
     // deploy from git
@@ -80,7 +80,7 @@ class DeploymentEngine {
         );
 
         // deploy the code
-        const port = await this.docker.createImage(
+        const {port, image_version_id, logs } = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
             true // run by default
@@ -91,7 +91,7 @@ class DeploymentEngine {
         // wipe the temp directory on exit
         await cleanup();
 
-        return port;
+        return { port, image_version_id, logs };
     }
 
     // deploy from git
@@ -117,7 +117,7 @@ class DeploymentEngine {
             );
     
             // deploy the code
-            const port = await this.docker.createImage(
+            const {port, image_version_id, logs } = await this.docker.createImage(
                 app_name, // name of the app to be deployed
                 directory_path, // the temp directoru holding our code while we are doing deployments
                 true // run by default
@@ -126,7 +126,7 @@ class DeploymentEngine {
             // wipe the temp directory on exit
             await cleanup();
     
-            return port;
+            return { port, image_version_id, logs };
         } catch(error) {
             console.log(error)
         }

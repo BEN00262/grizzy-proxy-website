@@ -1,13 +1,7 @@
 const mongoose = require('mongoose');
 
 const versionSchema = new mongoose.Schema({
-    // use it later
-    version_sha512: {
-        type: String,
-        required: true
-    },
-
-    container_archive_url: {
+    image_version_id: {
         type: String,
         required: true
     },

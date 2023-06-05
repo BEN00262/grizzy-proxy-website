@@ -31,7 +31,7 @@ class ProjectController {
                 repo_url, template_to_use, version
             } = req.body;
 
-            const unique_project_name = snakeCase(`${project_name}_${nanoid(8)}`);
+            const unique_project_name = `${project_name}_${nanoid(8)}`;
 
             // save the versions for this for later
             const project = await ProjectModel.create({
@@ -66,9 +66,19 @@ class ProjectController {
 
             // gets the logs -- we should save them i think
             // get the archive of the project
-            const container_archive = await DeploymentEngine.deploy(
+            const { port, image_version_id, logs } = await DeploymentEngine.deploy(
                 unique_project_name, deployment_type, config
             );
+
+            // update the metadata
+            const _version = await VersionModel.create({ image_version_id, logs, project: project._id })
+
+            // check if this is an active release
+            if (port /* active release */) {
+                await ProjectModel.findOneAndUpdate({ active_version: _version._id }, {
+                    _id: project._id
+                });
+            }
 
             // pass over to the provisioning engine ( passed in the next provisioning round )
             return massage_response({ 
@@ -101,21 +111,25 @@ class ProjectController {
 
     // get the zip file using multer
     // used for updates later
+    // TODO: refactor this to avoid Repeat
     static async deployProject(req, res) {
         // find a way to stream the reponse from the deployment stuff
         try {
             // find a way to pipe ws to this stuff :)
             // need to actually listen to and proxy the ws from the provisioning engine
-            const { project_id } = req.params;
+            const { unique_project_name } = req.params;
+
             const { 
                 deployment_type, deploy_template, repo_url,
                 template_to_use, version
             } = req.body;
 
-            await ProjectModel.findOneAndUpdate({ _id: project_id, owner: req.user._id }, {
+            await ProjectModel.findOneAndUpdate({ 
+                unique_name: unique_project_name /*, owner: req.user._id*/ 
+            }, {
                 template: deploy_template, repo_url,
                 deployment_type
-            });
+            }, { $new: true });
 
             // generate a config
             let config = {
@@ -140,15 +154,27 @@ class ProjectController {
                     throw new GrizzyDeployException("Invalid deployment type. Should either be zip, folder or git")
             }
 
-            await DeploymentEngine.deploy(
-                project_id, deployment_type, config
+            // gets the logs -- we should save them i think
+            // get the archive of the project
+            const { port, image_version_id, logs } = await DeploymentEngine.deploy(
+                unique_project_name, deployment_type, config
             );
+
+            // update the metadata
+            const _version = await VersionModel.create({ image_version_id, logs, project: project._id })
+
+            // check if this is an active release
+            if (port /* active release */) {
+                await ProjectModel.findOneAndUpdate({ active_version: _version._id }, {
+                    _id: project._id
+                });
+            }
 
             // pass over to the provisioning engine ( passed in the next provisioning round )
             return massage_response({ 
                 status: true,
-                deployment_url: `${project_id}.grizzy-deploy.com`
-            }, res);
+                deployment_url: `http://${unique_project_name}.grizzy-deploy.com`
+            }, res, 201);
         } catch(error) {
             return massage_error(error, res);
         }

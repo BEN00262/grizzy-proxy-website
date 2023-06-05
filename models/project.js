@@ -12,13 +12,8 @@ const projectSchema = new mongoose.Schema({
         required: true
     },
 
-    // depends on if its a zip, repo
+    // depends on if its a zip, repo, if the deployment type is not a git this is irrelevant
     repo_url: {
-        type: String
-    },
-
-    // sha256 hash if its a zip else last commit hash
-    last_commit_hash: {
         type: String
     },
 
@@ -41,17 +36,10 @@ const projectSchema = new mongoose.Schema({
         ref: 'user'
     },
 
-    // store the latest version ( running version )
     active_version: {
         type: mongoose.Types.ObjectId,
         ref: 'version'
-    },
-
-    versions: [{
-        type: mongoose.Types.ObjectId,
-        ref: 'version'
-    }]
-
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('project', projectSchema);
