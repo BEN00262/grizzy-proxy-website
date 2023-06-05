@@ -17,6 +17,7 @@ const proxy = require('redbird')({
 });
 
 // re-register previously registered domains
+// TODO: properly implement this
 ;(async () => {
     const domains = await DomainsModel.find();
 

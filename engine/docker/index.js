@@ -43,6 +43,9 @@ class SimpleHosterDocker {
                         "HostIP":"0.0.0.0",
                         "HostPort": `${generated_port}`
                     }]
+                },
+                RestartPolicy: {
+                    Name: 'always'
                 }
             }
         });
