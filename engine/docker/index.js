@@ -38,6 +38,7 @@ class SimpleHosterDocker {
                 AutoRemove: true,
                 Privileged: false,
                 CpuCount: 1,
+                Isolation: "process",
                 Memory: mbs_to_bytes(512),
                 PortBindings: {
                     "3000/tcp": [{
