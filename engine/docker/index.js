@@ -155,7 +155,7 @@ class SimpleHosterDocker {
             console.log(results)
 
             // get the image sha and return it
-            const image_version_id = this.docker.getImage(app_name).id;
+            const image_version_id = (await this.docker.getImage(app_name).inspect()).Id;
 
             console.log({ app_name, image_version_id })
     
