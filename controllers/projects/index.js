@@ -31,7 +31,7 @@ class ProjectController {
                 repo_url, template_to_use, version
             } = req.body;
 
-            const unique_project_name = `${project_name}_${nanoid(8)}`;
+            const unique_project_name = `${project_name}-${nanoid(8)}`;
 
             // save the versions for this for later
             const project = await ProjectModel.create({
@@ -66,7 +66,7 @@ class ProjectController {
 
             // gets the logs -- we should save them i think
             // get the archive of the project
-            const { port, image_version_id, logs } = await DeploymentEngine.deploy(
+            const { ports, image_version_id, logs } = await DeploymentEngine.deploy(
                 unique_project_name, deployment_type, config
             );
 
@@ -74,7 +74,7 @@ class ProjectController {
             const _version = await VersionModel.create({ image_version_id, logs, project: project._id })
 
             // check if this is an active release
-            if (port /* active release */) {
+            if (Array.isArray(ports) && ports.length /* active release */) {
                 await ProjectModel.findOneAndUpdate({ active_version: _version._id }, {
                     _id: project._id
                 });
@@ -156,7 +156,7 @@ class ProjectController {
 
             // gets the logs -- we should save them i think
             // get the archive of the project
-            const { port, image_version_id, logs } = await DeploymentEngine.deploy(
+            const { ports, image_version_id, logs } = await DeploymentEngine.deploy(
                 unique_project_name, deployment_type, config
             );
 
@@ -164,7 +164,7 @@ class ProjectController {
             const _version = await VersionModel.create({ image_version_id, logs, project: project._id })
 
             // check if this is an active release
-            if (port /* active release */) {
+            if (Array.isArray(ports) && ports.length /* active release */) {
                 await ProjectModel.findOneAndUpdate({ active_version: _version._id }, {
                     _id: project._id
                 });

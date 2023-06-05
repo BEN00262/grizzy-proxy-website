@@ -32,25 +32,26 @@ class DeploymentEngine {
                 throw new Error('Unsupported deployment type');
         }
 
-        if (instance_results?.port) {
+        if (Array.isArray(instance_results?.ports) && instance_results?.ports.length) {
             // attach the url at this point
             // store a list of these in the db for reregistration on bootup
-            ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://127.0.0.1:${instance_results?.port}`, {
-                // check if they want ssl enabled, if so anable
+            for (const port of instance_results?.ports) {
+                ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://127.0.0.1:${port}`, {
+                    // check if they want ssl enabled, if so anable
 
-                // implement later when we actually get a domain
-                // ssl: {
-                //     letsencrypt: {
-                //         email: "johnnesta2018@gmail.com", // process.env.LETSENCRYPT_EMAIL,
-                //         production: true
-                //     }
-                // }
-            });
+                    // implement later when we actually get a domain
+                    // ssl: {
+                    //     letsencrypt: {
+                    //         email: "johnnesta2018@gmail.com", // process.env.LETSENCRYPT_EMAIL,
+                    //         production: true
+                    //     }
+                    // }
+                });
+            }
 
             // save the registration for rebootup
             await DomainsModel.create({ 
-                sub_domain: app_name, port: instance?.ports,
-                image_version_id: instance_results?.image_version_id
+                sub_domain: app_name, image_version_id: instance_results?.image_version_id
             });
         }
 
@@ -83,7 +84,7 @@ class DeploymentEngine {
         );
 
         // deploy the code
-        const {port, image_version_id, logs } = await this.docker.createImage(
+        const {ports, image_version_id, logs } = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
             true // run by default
@@ -94,7 +95,7 @@ class DeploymentEngine {
         // wipe the temp directory on exit
         await cleanup();
 
-        return { port, image_version_id, logs };
+        return { ports, image_version_id, logs };
     }
 
     // deploy from git
@@ -120,7 +121,7 @@ class DeploymentEngine {
             );
     
             // deploy the code
-            const {port, image_version_id, logs } = await this.docker.createImage(
+            const {ports, image_version_id, logs } = await this.docker.createImage(
                 app_name, // name of the app to be deployed
                 directory_path, // the temp directoru holding our code while we are doing deployments
                 true // run by default
@@ -129,7 +130,7 @@ class DeploymentEngine {
             // wipe the temp directory on exit
             await cleanup();
     
-            return { port, image_version_id, logs };
+            return { ports, image_version_id, logs };
         } catch(error) {
             console.log(error)
         }

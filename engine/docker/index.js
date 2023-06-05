@@ -127,7 +127,7 @@ class SimpleHosterDocker {
         3. fill the required templates
         4. Build the image
      */
-    async createImage(app_name /* nanoid */, application_temp_directory, run_immediately = true) {
+    async createImage(app_name /* nanoid */, application_temp_directory, instances = 1, run_immediately = true) {
         try {
             const tar_stream = tar.pack(application_temp_directory);
             
@@ -151,6 +151,7 @@ class SimpleHosterDocker {
             });
     
             // show the build logs here ( attach a version build here )
+            // for debugging
             console.log(results)
 
             // get the image sha and return it
@@ -158,16 +159,25 @@ class SimpleHosterDocker {
     
             // check if we have to run immediately
             if (run_immediately) {
+                // how many instances to spin -- use that
+                const selfThis = this;
+
+                const ports = (await Promise.allSettled(
+                    // create the instances in parallel
+                    (new Array(instances).fill(1)).map(
+                        _ => selfThis.createContainerAndStart(app_name)
+                    )
+                )).map(({ value }) => value).filter(port => port /* a valid port */);
+
                 return {
-                    port: await this.createContainerAndStart(app_name),
-                    image_version_id,
+                    ports, image_version_id,
                     logs: results?.map(({ stream }) => `${stream}`)
                 }
             }
 
             // for scheduled deploys
             return {
-                port: null,
+                ports: null,
                 image_version_id,
                 logs: results?.map(({ stream }) => `${stream}`)
             };

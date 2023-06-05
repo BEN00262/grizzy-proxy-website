@@ -10,12 +10,6 @@ const domainSchema = new mongoose.Schema({
     image_version_id: {
         type: String,
         required: true
-    },
-
-    // the port its running
-    port: {
-        type: Number,
-        required: true
     }
 }, { timestamps: true });
 
