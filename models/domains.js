@@ -6,6 +6,12 @@ const domainSchema = new mongoose.Schema({
         required: true
     },
 
+    // add an image id --> used to check if the image has a running container
+    image_version_id: {
+        type: String,
+        required: true
+    },
+
     // the port its running
     port: {
         type: Number,

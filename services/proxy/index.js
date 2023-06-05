@@ -1,6 +1,8 @@
 const { DomainsModel } = require('../../models');
 const fs = require('fs');
 const path = require('path');
+const Docker = require('dockerode');
+const { snakeCase } = require('snake-case');
 
 const proxy = require('redbird')({
     port: process.env.PROXY_PORT || 3001,
@@ -21,12 +23,48 @@ const proxy = require('redbird')({
 // re-register previously registered domains
 // TODO: properly implement this
 ;(async () => {
+    const docker = new Docker();
     const domains = await DomainsModel.find();
 
     for (const domain of (domains ?? [])) {
-        if (domain.sub_domain && domain.port) {
+        if (domain.sub_domain && domain.image_version_id && domain.port) {
+            // we know the image stuff here i think
             // register them
-            proxy.register(`${domain.sub_domain}.grizzy-deploy.com`,  `http://127.0.0.1:${domain.port}`)
+
+            // check if the image has a running container ( if not do not register this domain and delete the association )
+            const containers = await docker.listContainers({
+                // from the docs
+                filters: JSON.stringify({
+                    // this works i think ( we need the version number )
+                    "ancestor": [domain.image_version_id]
+                })
+            });
+
+            // and atleast one of the containers is running bind it
+            if (containers.length) {
+                let ports_for_domain = [];
+
+                for (const container of containers) {
+                    if (container.State === 'running') {
+                        // mark them as running :)
+                        // get the container ports and stuff --> we can actually do load balancing here
+                        // running multiple instances i guess
+                        ports_for_domain.push(
+                            ...container.Ports.map(({ PublicPort }) => PublicPort)
+                        );
+                    }
+                }
+
+                if (ports_for_domain.length) {
+                    // create a simple round robin load balancer
+                    for (const port of ports_for_domain) {
+                        proxy.register(
+                            `${domain.sub_domain}.grizzy-deploy.com`,
+                            `http://127.0.0.1:${port}`
+                        )
+                    }
+                }
+            }
         }
     }
 })()

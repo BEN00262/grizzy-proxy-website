@@ -45,10 +45,13 @@ class DeploymentEngine {
                 //         production: true
                 //     }
                 // }
-            })
+            });
 
             // save the registration for rebootup
-            await DomainsModel.create({ sub_domain: app_name, port: instance?.ports });
+            await DomainsModel.create({ 
+                sub_domain: app_name, port: instance?.ports,
+                image_version_id: instance_results?.image_version_id
+            });
         }
 
         return instance_results;
