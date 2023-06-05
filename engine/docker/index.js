@@ -14,19 +14,39 @@ class SimpleHosterDocker {
       this.docker = new Docker();
     }
 
-    async #loginToDockerHub() {
-        
-    }
-
     // missing functionalities
     // snapshoting and storing the snapshot in s3 | replay the snapshot later
     // TODO: implement this later on
 
     // returns the port the container is running in
-    async createContainerAndStart(app_name) {
+    async createContainerAndStart(app_name, not_sure_exists_locally = false) {
+        // we can check if the image does exist locally if not pull it from the private repo
+        if (not_sure_exists_locally) {
+            // check if the image exists locally
+            const local_image = (await this.docker.getImage(app_name).inspect())?.Id;
+
+            if (!local_image) {
+                const pull_stream = await this.docker.pull(`${process.env.DOCKERHUB_USERNAME}/${app_name}:latest`, {
+                    authconfig: {
+                        username: process.env.DOCKERHUB_USERNAME,
+                        password: process.env.DOCKERHUB_PASSWORD,
+                    }
+                });
+
+                await new Promise((resolve, reject) => {
+                    this.docker.modem.followProgress(pull_stream, (err, res) => {
+                        if (err) {
+                            reject(err);
+                        }
+    
+                        resolve(res);
+                    });
+                });
+            }
+        }
+        
         const generated_port = await portfinder.getPortPromise();
 
-        // figure out how to pass auth to use the image in dockerhub
         const container = await this.docker.createContainer({
             Image: app_name, // image to spin up
 
@@ -145,11 +165,12 @@ class SimpleHosterDocker {
                     t: app_name, 
                     forcerm: true,
                     dockerfile: "Dockerfile",
-                    remote: `${process.env.DOCKERHUB_USERNAME}/${app_name}:latest`,
-                    authconfig: {
-                        username: process.env.DOCKERHUB_USERNAME,
-                        password: process.env.DOCKERHUB_PASSWORD,
-                    }
+                    cpuperiod: 120000, // 2 mins max per build
+                    // remote: `${process.env.DOCKERHUB_USERNAME}/${app_name}:latest`,
+                    // authconfig: {
+                    //     username: process.env.DOCKERHUB_USERNAME,
+                    //     password: process.env.DOCKERHUB_PASSWORD,
+                    // }
                 },
             );
     
@@ -169,11 +190,21 @@ class SimpleHosterDocker {
             console.log(results)
 
             // get the image sha and return it
-            const image_version_id = (await this.docker.getImage(app_name).inspect())?.Id;
+            const image = this.docker.getImage(app_name);
 
-            if (!image_version_id) {
+            if (!image) {
                 throw new GrizzyDeployException("Failed to get the deployment id");
             }
+
+            // push the image to dockerhub
+            image.push({
+                authconfig: {
+                    username: process.env.DOCKERHUB_USERNAME,
+                    password: process.env.DOCKERHUB_PASSWORD,
+                }
+            });
+
+            const image_version_id = (await image.inspect())?.Id;
     
             // check if we have to run immediately
             if (run_immediately) {

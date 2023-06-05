@@ -41,3 +41,5 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 }
+
+apt-get install -y python2 python3 libkrb5-dev gcc openssl libssh2-1-dev g++ make ( for nodegit )
