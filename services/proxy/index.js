@@ -1,5 +1,6 @@
 const { DomainsModel } = require('../../models');
 const fs = require('fs');
+const path = require('path');
 
 const proxy = require('redbird')({
     port: process.env.PROXY_PORT || 3001,
@@ -35,7 +36,7 @@ proxy.notFound(function (req, res){
     // render the 404 page here
     res.statusCode = 404;
     res.setHeader('Content-Type', 'text/html');
-    res.write(fs.readFileSync('./404.html', 'utf-8'));
+    res.write(fs.readFileSync(path.join(__dirname, '404.html'), 'utf-8'));
     res.end();
 });
 
