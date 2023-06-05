@@ -1,4 +1,5 @@
 const { DomainsModel } = require('../../models');
+const fs = require('fs');
 
 const proxy = require('redbird')({
     port: process.env.PROXY_PORT || 3001,
@@ -30,6 +31,13 @@ const proxy = require('redbird')({
 })()
 
 // const docker = require('redbird').docker;
+proxy.notFound(function (req, res){
+    // render the 404 page here
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'text/html');
+    res.write(fs.readFileSync('./404.html', 'utf-8'));
+    res.end();
+});
 
 module.exports = {
     ReverseProxy: proxy
