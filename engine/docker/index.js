@@ -197,22 +197,22 @@ class SimpleHosterDocker {
             }
 
             // push the image to dockerhub
-            const push_stream = image.push({
-                authconfig: {
-                    username: process.env.DOCKERHUB_USERNAME,
-                    password: process.env.DOCKERHUB_PASSWORD,
-                }
-            });
+            // const push_stream = image.push({
+            //     authconfig: {
+            //         username: process.env.DOCKERHUB_USERNAME,
+            //         password: process.env.DOCKERHUB_PASSWORD,
+            //     }
+            // });
 
-            await new Promise((resolve, reject) => {
-                this.docker.modem.followProgress(push_stream, (err, res) => {
-                    if (err) {
-                        reject(err);
-                    }
+            // await new Promise((resolve, reject) => {
+            //     this.docker.modem.followProgress(push_stream, (err, res) => {
+            //         if (err) {
+            //             reject(err);
+            //         }
 
-                    console.log(res);
-                });
-            });
+            //         console.log(res);
+            //     });
+            // });
 
             const image_version_id = (await image.inspect())?.Id;
     
