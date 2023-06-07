@@ -40,12 +40,12 @@ class DeploymentEngine {
                     // check if they want ssl enabled, if so anable
 
                     // implement later when we actually get a domain
-                    // ssl: {
-                    //     letsencrypt: {
-                    //         email: "johnnesta2018@gmail.com", // process.env.LETSENCRYPT_EMAIL,
-                    //         production: true
-                    //     }
-                    // }
+                    ssl: {
+                        letsencrypt: {
+                            email: "johnnesta2018@gmail.com", // process.env.LETSENCRYPT_EMAIL,
+                            production: true
+                        }
+                    }
                 });
             }
 

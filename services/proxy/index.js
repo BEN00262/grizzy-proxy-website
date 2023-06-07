@@ -2,22 +2,21 @@ const { DomainsModel } = require('../../models');
 const fs = require('fs');
 const path = require('path');
 const Docker = require('dockerode');
-const { snakeCase } = require('snake-case');
 
 const proxy = require('redbird')({
     port: process.env.PROXY_PORT || 3001,
 
-    // letsencrypt: {
-    //     path: __dirname + '/certs',
-    //     port: 9999 // LetsEncrypt minimal web server port for handling challenges. Routed 80->9999, no need to open 9999 in firewall. Default 3000 if not defined.
-    // },
+    letsencrypt: {
+        path: __dirname + '/certs',
+        port: 9999 // LetsEncrypt minimal web server port for handling challenges. Routed 80->9999, no need to open 9999 in firewall. Default 3000 if not defined.
+    },
 
-    // ssl: {
-    //     http2: true,
-    //     port: 443
-    // },
+    ssl: {
+        http2: true,
+        port: 443
+    },
 
-    // cluster: 4
+    cluster: 4
 });
 
 // re-register previously registered domains
@@ -60,7 +59,15 @@ const proxy = require('redbird')({
                     for (const port of ports_for_domain) {
                         proxy.register(
                             `${domain.sub_domain}.grizzy-deploy.com`,
-                            `http://127.0.0.1:${port}`
+                            `http://127.0.0.1:${port}`, {
+                                // add ssl support, make this work somehow
+                                ssl: {
+                                    letsencrypt: {
+                                        email: "johnnesta2018@gmail.com", // process.env.LETSENCRYPT_EMAIL,
+                                        production: true
+                                    }
+                                }
+                            }
                         )
                     }
                 }
