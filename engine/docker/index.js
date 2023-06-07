@@ -19,7 +19,7 @@ class SimpleHosterDocker {
     // TODO: implement this later on
 
     // returns the port the container is running in
-    async createContainerAndStart(app_name, not_sure_exists_locally = false) {
+    async createContainerAndStart(app_name, secrets_manager, not_sure_exists_locally = false) {
         // we can check if the image does exist locally if not pull it from the private repo
         if (not_sure_exists_locally) {
             // check if the image exists locally
@@ -55,11 +55,9 @@ class SimpleHosterDocker {
             },
 
             // we can also pass env keys pretty easily
-            // find a way to store env keys securely and load them to the container 
-            Env: [
-                // load this secrets dynamically during deployment of a container
-                // "DBHOST=" + dbHost,
-            ],
+            // find a way to store env keys securely and load them to the container
+            // resolve the project secrets somehow
+            Env: secrets_manager.getProjectSecrets(),
 
             HostConfig: {
                 AutoRemove: true,
@@ -156,7 +154,7 @@ class SimpleHosterDocker {
         3. fill the required templates
         4. Build the image
      */
-    async createImage(app_name /* nanoid */, application_temp_directory, instances = 1, run_immediately = true) {
+    async createImage(app_name /* nanoid */, application_temp_directory, secrets_manager, instances = 1, run_immediately = true) {
         try {
             const tar_stream = tar.pack(application_temp_directory);
             
@@ -224,7 +222,7 @@ class SimpleHosterDocker {
                 const ports = (await Promise.allSettled(
                     // create the instances in parallel
                     (new Array(instances).fill(1)).map(
-                        _ => selfThis.createContainerAndStart(app_name)
+                        async _ => selfThis.createContainerAndStart(app_name, secrets_manager)
                     )
                 )).map(({ value }) => value).filter(port => port /* a valid port */);
 

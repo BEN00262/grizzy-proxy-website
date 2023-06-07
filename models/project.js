@@ -20,21 +20,15 @@ const projectSchema = new mongoose.Schema({
     // template used for the deployment
     // will be used to redeploy later on
     template: {
-        template_name: {
-            type: String,
-            required: true
-        },
-
-        version: {
-            type: String,
-            required: true
-        }
+        type: mongoose.Types.ObjectId,
+        ref: 'template'
     },
 
-    // an encrypted blob that will be decrypted on runtime only
-    // env_keys: {
-
-    // },
+    // an rsa encrypted randomly generated aes 256 gcm key --> used for encrypting and decrypting secrets during deployments
+    vault_key: {
+        type: String,
+        default: null
+    },
 
     owner: {
         type: mongoose.Types.ObjectId,

@@ -1,10 +1,10 @@
-const { nanoid } = require('nanoid');
-const { snakeCase } = require("snake-case");
+const dotenv = require('dotenv')
 
 const ReverseProxy = require("../../services");
-const { ProjectModel, VersionModel } = require("../../models");
+const { ProjectModel, VersionModel, SecretsModel } = require("../../models");
 const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName } = require("../../utils");
 const { DeploymentEngine } = require('../../engine');
+const { GrizzySecretsManager } = require('../../engine/secrets');
 
 // during deployments --> we should get an archive of the container then store it in s3
 // create versions
@@ -28,16 +28,18 @@ class ProjectController {
         try {
             const { 
                 project_name, deployment_type, 
-                repo_url, template_to_use, version
+                repo_url, template, env_keys /* a blob of text matching ENV_KEY=ENV_VALUE format */
             } = req.body;
 
             const unique_project_name = `${project_name}-${getUniqueSubdomainName()}`.toLowerCase();
 
+            const vault_key = GrizzySecretsManager.generateVaultKey();
+
             // save the versions for this for later
             const project = await ProjectModel.create({
                unique_name: unique_project_name,
-               repo_url, deployment_type,
-               template: { template_name: template_to_use, version },
+               repo_url, deployment_type, template,
+               vault_key: vault_key.encrypted_key
             //    owner: req.user._id
             });
 
@@ -66,8 +68,17 @@ class ProjectController {
 
             // gets the logs -- we should save them i think
             // get the archive of the project
+            // we need to get any project keys present for this project
+            const secrets_manager = new GrizzySecretsManager(vault_key.raw_key, [], true /* this is a fresh key */);
+            secrets_manager.generate_secrets_from_env_blob(env_keys ?? "");
+
+            await SecretsModel.bulkSave(
+                (secrets_manager.saveSecrets() ?? [])
+                    .map(x => ({ ...x, project: project._id }))
+            );
+
             const { ports, image_version_id, logs } = await DeploymentEngine.deploy(
-                unique_project_name, deployment_type, config
+                unique_project_name, deployment_type, config, secrets_manager
             );
 
             // update the metadata
@@ -94,22 +105,22 @@ class ProjectController {
     }
 
     // check if there is a project with the suggested name already exisiting
-    static async checkIfProjectNameAvailable(req, res) {
-        try {
-            // check if the passed name already exists
-            const project_name = req.params.project_name;
+    // static async checkIfProjectNameAvailable(req, res) {
+    //     try {
+    //         // check if the passed name already exists
+    //         const project_name = req.params.project_name;
 
-            const already_existing_project_with_name = await ProjectModel.count({
-                display_name: project_name
-            });
+    //         const already_existing_project_with_name = await ProjectModel.count({
+    //             display_name: project_name
+    //         });
 
-            return massage_response({
-                is_project_name_already_taken: already_existing_project_with_name > 0
-            }, res);
-        } catch (error) {
-            return massage_error(error, res);
-        }
-    }
+    //         return massage_response({
+    //             is_project_name_already_taken: already_existing_project_with_name > 0
+    //         }, res);
+    //     } catch (error) {
+    //         return massage_error(error, res);
+    //     }
+    // }
 
     // get the zip file using multer
     // used for updates later

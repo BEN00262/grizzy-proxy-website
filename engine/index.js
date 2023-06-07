@@ -16,17 +16,17 @@ class DeploymentEngine {
         this.docker = new SimpleHosterDocker();
     }
 
-    async deploy(app_name, type /* git | zip | folder */, configs = {}) {
+    async deploy(app_name, type /* git | zip | folder */, configs, secrets_manager) {
         let instance_results = {};
         
         const _app_name = snakeCase(app_name);
 
         switch (type) {
             case 'git':
-                instance_results = await this.#deployFromGit(_app_name, configs /*repo_url, template_to_use, version*/);
+                instance_results = await this.#deployFromGit(_app_name, configs /*repo_url, template_to_use, version*/, secrets_manager);
                 break;
             case 'zip':
-                instance_results = await this.#deployFromZip(_app_name, configs /* zip_file_buffer, template_to_use, version */);
+                instance_results = await this.#deployFromZip(_app_name, configs /* zip_file_buffer, template_to_use, version */, secrets_manager);
                 break;
             default:
                 throw new Error('Unsupported deployment type');
@@ -59,7 +59,7 @@ class DeploymentEngine {
     }
 
     // deploy from git
-    async #deployFromZip(app_name /* this is the name of the image too */, configs = {}) {
+    async #deployFromZip(app_name /* this is the name of the image too */, configs, secrets_manager) {
         const { cleanup, path: directory_path } = await tmp.dir({
             keep: false,
             prefix:  'deploy-',
@@ -87,6 +87,7 @@ class DeploymentEngine {
         const {ports, image_version_id, logs } = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
+            secrets_manager,
             true // run by default
         );
 
@@ -99,7 +100,7 @@ class DeploymentEngine {
     }
 
     // deploy from git
-    async #deployFromGit(app_name /* this is the name of the image too */, configs = {}) {
+    async #deployFromGit(app_name /* this is the name of the image too */, configs, secrets_manager) {
         try {
             const { cleanup, path: directory_path } = await tmp.dir({
                 keep: false,
@@ -124,6 +125,7 @@ class DeploymentEngine {
             const {ports, image_version_id, logs } = await this.docker.createImage(
                 app_name, // name of the app to be deployed
                 directory_path, // the temp directoru holding our code while we are doing deployments
+                secrets_manager,
                 true // run by default
             );
             
