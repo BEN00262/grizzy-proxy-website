@@ -8,7 +8,7 @@ const cors = require('cors');
 
 const { ProjectRouter, UserRouter } = require('./routes');
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3003;
 
 const app = express();
 const server = require('http').createServer(app);
