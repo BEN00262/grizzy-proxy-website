@@ -38,7 +38,7 @@ class ProjectController {
             // save the versions for this for later
             const project = await ProjectModel.create({
                unique_name: unique_project_name,
-               repo_url, deployment_type, template,
+               repo_url, deployment_type, // template,
                vault_key: vault_key.encrypted_key
             //    owner: req.user._id
             });
