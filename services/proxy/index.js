@@ -16,7 +16,7 @@ const proxy = require('redbird')({
         port: 443
     },
 
-    cluster: 2
+    // cluster: 2
 });
 
 // re-register previously registered domains
