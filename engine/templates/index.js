@@ -5,36 +5,39 @@ const { GrizzyDeployException } = require('../../utils');
 class TemplateExecutionEngine {
     static async execute_template(template, folder) {
         // pass the folder into the context
+
         const vm = new NodeVM({
             timeout: 2000,
             allowAsync: true,
             console: "off",
+            sandbox: { folder },
             require: {
                 external: false,
                 builtin: [
-                    "fs", "fs/promises"
+                    "fs", "fs/promises", "path"
                 ],
 
-                import: ["fs", "fs/promises"],
+                import: ["fs", "fs/promises", "path"],
                 root: folder,
             }
         });
 
         // expect the return value to be a string or else we dont care about it
         const generated_tpl = vm.run(
-            `;(async () => {
-                ${template}
-                
-                return await generate_deployment_script();
-            })()`
-        );
+            `${template}
+            
+            module.exports = () => generate_deployment_script(folder);`, {
+            wrapper: "commonjs"
+        });
 
-        if (typeof generated_tpl !== 'string') {
+        const parsed_template = await generated_tpl();
+
+        if (typeof parsed_template !== 'string') {
             throw new GrizzyDeployException("Invalid deployment script");
         }
 
         // force the generated tpl to match a docker script
-        return generated_tpl;
+        return parsed_template;
     }
 }
 

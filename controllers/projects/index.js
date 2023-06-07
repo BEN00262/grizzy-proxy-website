@@ -30,7 +30,7 @@ class ProjectController {
         try {
             const { 
                 project_name, deployment_type, 
-                repo_url, template, version, env_keys /* a blob of text matching ENV_KEY=ENV_VALUE format */
+                repo_url, template, env_keys /* a blob of text matching ENV_KEY=ENV_VALUE format */
             } = req.body;
 
             const unique_project_name = `${project_name}-${getUniqueSubdomainName()}`.toLowerCase();
@@ -50,8 +50,8 @@ class ProjectController {
                 // the template is execute through the templates engine 
                 // the generated template is then used to generate the containers
 
-                template: (folder) => TemplateExecutionEngine.execute_template(
-                    TemplatesController.getTemplate(template, req.user), folder
+                template: async (folder) => TemplateExecutionEngine.execute_template(
+                    await TemplatesController.getTemplate(template, req.user), folder
                 ),
             };
 

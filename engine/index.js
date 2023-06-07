@@ -110,7 +110,7 @@ class DeploymentEngine {
             });
     
             await this.git.pullRepo(directory_path, configs.repo_url);
-    
+
             await fs.writeFile(
                 path.join(directory_path, 'Dockerfile'),
     
