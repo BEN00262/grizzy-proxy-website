@@ -28,7 +28,7 @@ class ProjectController {
         try {
             const { 
                 project_name, deployment_type, 
-                repo_url, template, env_keys /* a blob of text matching ENV_KEY=ENV_VALUE format */
+                repo_url, template, version, env_keys /* a blob of text matching ENV_KEY=ENV_VALUE format */
             } = req.body;
 
             const unique_project_name = `${project_name}-${getUniqueSubdomainName()}`.toLowerCase();
@@ -45,7 +45,7 @@ class ProjectController {
 
             // generate a config
             let config = {
-                template_to_use,
+                template_to_use: template,
                 template_version: version
             };
 
