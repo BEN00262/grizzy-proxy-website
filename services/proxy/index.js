@@ -6,10 +6,10 @@ const Docker = require('dockerode');
 const proxy = require('redbird')({
     port: process.env.PROXY_PORT || 3001,
 
-    letsencrypt: {
-        path: '../../certs',
-        port: 9999 // LetsEncrypt minimal web server port for handling challenges. Routed 80->9999, no need to open 9999 in firewall. Default 3000 if not defined.
-    },
+    // letsencrypt: {
+    //     path: '../../certs',
+    //     port: 9999 // LetsEncrypt minimal web server port for handling challenges. Routed 80->9999, no need to open 9999 in firewall. Default 3000 if not defined.
+    // },
 
     ssl: {
         http2: true,
@@ -61,12 +61,12 @@ const proxy = require('redbird')({
                             `${domain.sub_domain}.grizzy-deploy.com`,
                             `http://127.0.0.1:${port}`, {
                                 // add ssl support, make this work somehow
-                                ssl: {
-                                    letsencrypt: {
-                                        email: "johnnesta2018@gmail.com", // process.env.LETSENCRYPT_EMAIL,
-                                        production: true
-                                    }
-                                }
+                                // ssl: {
+                                //     letsencrypt: {
+                                //         email: "johnnesta2018@gmail.com", // process.env.LETSENCRYPT_EMAIL,
+                                //         production: true
+                                //     }
+                                // }
                             }
                         )
                     }
