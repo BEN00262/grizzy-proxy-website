@@ -81,7 +81,7 @@ class DeploymentEngine {
             //     directory_path, 
             //     { version: configs.version }
             // )
-            configs.template(directory_path)
+            await configs.template(directory_path)
         );
 
         // deploy the code
@@ -120,7 +120,7 @@ class DeploymentEngine {
                 //     directory_path, 
                 //     { version: configs.version }
                 // )
-                configs.template(directory_path)
+                await configs.template(directory_path)
             );
     
             // deploy the code
