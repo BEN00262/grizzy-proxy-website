@@ -12,7 +12,7 @@ class GrizzySecretsManager {
     }
 
     static generateVaultKey() {
-        const publicKey = fs.readFileSync('../../public_key.pem', 'utf8');
+        // const publicKey = fs.readFileSync('../../public_key.pem', 'utf8');
 
         const generated_key = cryptoRandomString({ length: 50 });
 
