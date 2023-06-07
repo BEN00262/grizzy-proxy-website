@@ -76,11 +76,12 @@ class DeploymentEngine {
             path.join(directory_path, 'Dockerfile'),
 
             // generate deployment scripts
-            await this.#loadDeploymentTemplate(
-                configs.template_to_use, 
-                directory_path, 
-                { version: configs.version }
-            )
+            // await this.#loadDeploymentTemplate(
+            //     configs.template_to_use, 
+            //     directory_path, 
+            //     { version: configs.version }
+            // )
+            configs.template(directory_path)
         );
 
         // deploy the code
@@ -114,11 +115,12 @@ class DeploymentEngine {
                 path.join(directory_path, 'Dockerfile'),
     
                 // generate the deployment scripts
-                await this.#loadDeploymentTemplate(
-                    configs.template_to_use, 
-                    directory_path, 
-                    { version: configs.version }
-                )
+                // await this.#loadDeploymentTemplate(
+                //     configs.template_to_use, 
+                //     directory_path, 
+                //     { version: configs.version }
+                // )
+                configs.template(directory_path)
             );
     
             // deploy the code

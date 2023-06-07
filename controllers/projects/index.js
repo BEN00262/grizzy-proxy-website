@@ -5,6 +5,8 @@ const { ProjectModel, VersionModel, SecretsModel } = require("../../models");
 const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName } = require("../../utils");
 const { DeploymentEngine } = require('../../engine');
 const { GrizzySecretsManager } = require('../../engine/secrets');
+const { TemplatesController } = require('../templates');
+const { TemplateExecutionEngine } = require('../../engine/templates');
 
 // during deployments --> we should get an archive of the container then store it in s3
 // create versions
@@ -38,15 +40,19 @@ class ProjectController {
             // save the versions for this for later
             const project = await ProjectModel.create({
                unique_name: unique_project_name,
-               repo_url, deployment_type, // template,
+               repo_url, deployment_type, template,
                vault_key: vault_key.encrypted_key
             //    owner: req.user._id
             });
 
             // generate a config
             let config = {
-                template_to_use: template,
-                template_version: version
+                // the template is execute through the templates engine 
+                // the generated template is then used to generate the containers
+
+                template: (folder) => TemplateExecutionEngine.execute_template(
+                    TemplatesController.getTemplate(template, req.user), folder
+                ),
             };
 
             switch(deployment_type) {
@@ -85,6 +91,7 @@ class ProjectController {
             );
 
             // update the metadata
+            // fix the logs streaming
             const _version = await VersionModel.create({ 
                 image_version_id, logs, project: project._id 
             })

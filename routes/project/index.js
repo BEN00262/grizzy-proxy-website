@@ -1,9 +1,25 @@
 const { ProjectController } = require('../../controllers/projects');
+const { TemplatesController } = require('../../controllers/templates');
 const { EnsureIsAuthenticated } = require('../../middlewares/auth');
 
 const router = require('express').Router();
 
 router.use([EnsureIsAuthenticated]);
+
+router.get(
+    '/templates',
+    TemplatesController.getTemplates
+);
+
+router.post(
+    '/templates',
+    TemplatesController.createTemplate
+);
+
+router.delete(
+    '/templates',
+    TemplatesController.deleteTemplate
+);
 
 router.get('/all', ProjectController.getProjects);
 // router.get('/is-project-name-taken/:project_name', ProjectController.checkIfProjectNameAvailable);

@@ -3,5 +3,6 @@ module.exports = {
     ProjectModel: require('./project'),
     VersionModel: require('./version'),
     DomainsModel: require('./domains'),
-    SecretsModel: require('./secret')
+    SecretsModel: require('./secret'),
+    TemplateModel: require('./templates')
 }
