@@ -72,10 +72,13 @@ class ProjectController {
             const secrets_manager = new GrizzySecretsManager(vault_key.raw_key, [], true /* this is a fresh key */);
             secrets_manager.generate_secrets_from_env_blob(env_keys ?? "");
 
-            await SecretsModel.bulkSave(
-                (secrets_manager.saveSecrets() ?? [])
-                    .map(x => ({ ...x, project: project._id }))
-            );
+            const secrets = secrets_manager.saveSecrets() ?? [];
+
+            if (secrets?.length) {
+                await SecretsModel.insertMany(
+                    secrets.map(x => ({ ...x, project: project._id }))
+                );
+            }
 
             const { ports, image_version_id, logs } = await DeploymentEngine.deploy(
                 unique_project_name, deployment_type, config, secrets_manager
