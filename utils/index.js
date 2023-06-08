@@ -84,7 +84,8 @@ module.exports = {
     verifyJwtToken,
     getUniqueSubdomainName: () => {
         return uniqueNamesGenerator({
-            dictionaries: [colors, adjectives, animals]
-        }).replace("_", "-");
+            dictionaries: [colors, adjectives, animals],
+            separator: '-',
+        });
     }
 }

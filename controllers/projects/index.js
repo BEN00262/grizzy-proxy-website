@@ -114,23 +114,6 @@ class ProjectController {
         }
     }
 
-    // check if there is a project with the suggested name already exisiting
-    // static async checkIfProjectNameAvailable(req, res) {
-    //     try {
-    //         // check if the passed name already exists
-    //         const project_name = req.params.project_name;
-
-    //         const already_existing_project_with_name = await ProjectModel.count({
-    //             display_name: project_name
-    //         });
-
-    //         return massage_response({
-    //             is_project_name_already_taken: already_existing_project_with_name > 0
-    //         }, res);
-    //     } catch (error) {
-    //         return massage_error(error, res);
-    //     }
-    // }
 
     // get the zip file using multer
     // used for updates later
@@ -205,6 +188,7 @@ class ProjectController {
 
     static async getProjectVersions(req, res) {
         try {
+            // max of 5 versions
             const project = await ProjectModel.find({
                 unique_name: req.params.unique_project_name,
                 owner: req.user._id
