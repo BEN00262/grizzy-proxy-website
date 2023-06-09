@@ -25,8 +25,15 @@ class DeploymentEngine {
             case 'git':
                 instance_results = await this.#deployFromGit(_app_name, configs /*repo_url, template_to_use, version*/, secrets_manager);
                 break;
+
             case 'zip':
                 instance_results = await this.#deployFromZip(_app_name, configs /* zip_file_buffer, template_to_use, version */, secrets_manager);
+                break;
+
+            case 'wordpress':
+                instance_results = await this.#deployWordpress(
+                    _app_name, configs /* zip_file_buffer, template_to_use, version */, secrets_manager
+                );
                 break;
             default:
                 throw new Error('Unsupported deployment type');
@@ -56,6 +63,34 @@ class DeploymentEngine {
         }
 
         return instance_results;
+    }
+
+    async #deployWordpress(app_name, configs, secrets_manager) {
+        const { cleanup, path: directory_path } = await tmp.dir({
+            keep: false,
+            prefix:  'deploy-',
+            unsafeCleanup: true
+        });
+
+        const { parsed_template, env } = await configs.template(directory_path);
+
+        await fs.writeFile(
+            path.join(directory_path, 'Dockerfile'),
+            parsed_template
+        );
+
+        // deploy the code
+        const {ports, image_version_id, logs } = await this.docker.createImage(
+            app_name, // name of the app to be deployed
+            directory_path, // the temp directoru holding our code while we are doing deployments
+            [...env, ...secrets_manager.getProjectSecrets()],
+            true // run by default
+        );
+
+        // wipe the temp directory on exit
+        await cleanup();
+
+        return { ports, image_version_id, logs };
     }
 
     // deploy from git
@@ -111,23 +146,18 @@ class DeploymentEngine {
     
             await this.git.pullRepo(directory_path, configs.repo_url);
 
+            const { parsed_template, env } = await configs.template(directory_path);
+
             await fs.writeFile(
                 path.join(directory_path, 'Dockerfile'),
-    
-                // generate the deployment scripts
-                // await this.#loadDeploymentTemplate(
-                //     configs.template_to_use, 
-                //     directory_path, 
-                //     { version: configs.version }
-                // )
-                await configs.template(directory_path)
+                parsed_template
             );
     
             // deploy the code
             const {ports, image_version_id, logs } = await this.docker.createImage(
                 app_name, // name of the app to be deployed
                 directory_path, // the temp directoru holding our code while we are doing deployments
-                secrets_manager,
+                [...env, ...secrets_manager.getProjectSecrets()],
                 true // run by default
             );
             

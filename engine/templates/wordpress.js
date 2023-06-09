@@ -3,9 +3,13 @@ const fs = require('fs/promises');
 const path = require('path');
 const { GrizzyDeployException } = require("../../utils");
 
-const template = `FROM node:18-alpine
+const template = `FROM wordpress:latest
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV WORDPRESS_DB_HOST=db
+ENV WORDPRESS_DB_USER=wordpress
+ENV WORDPRESS_DB_PASSWORD=wordpress
+ENV WORDPRESS_DB_NAME=wordpress
 
 WORKDIR /app
 
@@ -19,7 +23,7 @@ COPY . .
 
 CMD ["/bin/sh", "-c", "pm2-runtime 'npm start'"]`;
 
-class NodeJsDeployment {
+class WordpressDeployment {
     static async generate_deployment_script(context, temp_folder) {
         // check the version | requirements to run a node app
         // read the package.json and check if there is a start command if not throw an Exception that will bubble up
@@ -46,4 +50,4 @@ class NodeJsDeployment {
     }
 }
 
-module.exports = NodeJsDeployment;
+module.exports = WordpressDeployment;

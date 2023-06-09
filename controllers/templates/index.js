@@ -24,14 +24,14 @@ class TemplatesController {
 
             const {
                 is_public, is_system_template, technologies_used,
-                description, src
+                description, src, template_type 
             } = req.body;
 
             // link it to someone incase if not a system template
             const template = await TemplateModel.create({
                 is_public, version: '0.0.1',
                 is_system_template /* this will not be passed in directly */, technologies_used,
-                description, src
+                description, src, template_type: template_type ?? "other"
             });
 
             return massage_response({ template }, res);
@@ -67,7 +67,7 @@ class TemplatesController {
         });
 
 
-        return template?.src;
+        return template;
     }
 }
 

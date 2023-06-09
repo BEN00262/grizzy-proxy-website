@@ -7,6 +7,16 @@ const templateSchema = new mongoose.Schema({
         default: false
     },
 
+    editable: {
+        type: Boolean,
+        default: true
+    },
+
+    template_type: {
+        type: String,
+        enum: ['wordpress', 'other' /* system does not provision a db for you */]
+    },
+
     // only applies if the is_system_template is set to false, allows a local template to be exposed for others to use
     is_public: {
         type: Boolean,

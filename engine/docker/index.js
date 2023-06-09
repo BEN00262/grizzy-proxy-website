@@ -1,6 +1,7 @@
 const Docker = require('dockerode');
 const portfinder = require('portfinder');
 const tar = require('tar-fs');
+const { nanoid } = require('nanoid');
 const { GrizzyDeployException } = require('../../utils');
 
 portfinder.setBasePort(3001);
@@ -57,7 +58,7 @@ class SimpleHosterDocker {
             // we can also pass env keys pretty easily
             // find a way to store env keys securely and load them to the container
             // resolve the project secrets somehow
-            Env: secrets_manager.getProjectSecrets(),
+            Env: secrets_manager,
 
             HostConfig: {
                 AutoRemove: true,

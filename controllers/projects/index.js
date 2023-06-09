@@ -64,6 +64,9 @@ class ProjectController {
                     config = { ...config, zip_file_buffer: req.file.buffer };
                     break;
 
+                case 'wordpress':
+                    break;
+
                 case 'folder':
                     // config = {};
                     break;
