@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const projectSchema = new mongoose.Schema({
     deployment_type: {
         type: String,
-        enum: ['zip', 'git', 'folder']
+        enum: ['zip', 'git', 'folder', 'wordpress']
     },
 
     // assigned by the system on creation
