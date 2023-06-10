@@ -2,14 +2,14 @@ const mongoose = require('mongoose');
 
 const versionSchema = new mongoose.Schema({
     image_version_id: {
-        type: String,
-        required: true
+        type: String
     },
 
-    // deployment logs
-    logs: [{
+    status: {
         type: String,
-    }],
+        default: 'deploying',
+        enum: ['deploying', 'failed', 'deployed']
+    },
 
     project: {
         type: mongoose.Types.ObjectId,

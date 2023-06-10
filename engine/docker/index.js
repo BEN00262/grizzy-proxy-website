@@ -2,7 +2,7 @@ const Docker = require('dockerode');
 const portfinder = require('portfinder');
 const tar = require('tar-fs');
 const { nanoid } = require('nanoid');
-const { GrizzyDeployException } = require('../../utils');
+const { GrizzyDeployException, GrizzyInternalDeploymentException } = require('../../utils');
 
 portfinder.setBasePort(3001);
 
@@ -155,7 +155,10 @@ class SimpleHosterDocker {
         3. fill the required templates
         4. Build the image
      */
-    async createImage(app_name /* nanoid */, application_temp_directory, secrets_manager, instances = 1, run_immediately = true) {
+    async createImage(
+        app_name /* nanoid */, application_temp_directory, 
+        secrets_manager, logs_handler, run_immediately = true, instances = 1
+    ) {
         try {
             const tar_stream = tar.pack(application_temp_directory);
             
@@ -174,13 +177,19 @@ class SimpleHosterDocker {
             );
     
             // figure wtf the stream is
-            const results = await new Promise((resolve, reject) => {
+            await new Promise((resolve, reject) => {
                 this.docker.modem.followProgress(build_stream, (err, res) => {
                     if (err) {
-                        reject(err);
+                        // throw an error on the logs, this marks the deployment as a failure
+                        logs_handler(err?.message)
+                            .finally(_ => {
+                                // yes
+                                reject(new GrizzyInternalDeploymentException(err?.message));
+                            })
                     }
 
-                    resolve(res);
+                    // this is the place we call our stuff
+                    logs_handler(res?.stream)
                 });
             });
     
@@ -194,24 +203,6 @@ class SimpleHosterDocker {
             if (!image) {
                 throw new GrizzyDeployException("Failed to get the deployment id");
             }
-
-            // push the image to dockerhub
-            // const push_stream = image.push({
-            //     authconfig: {
-            //         username: process.env.DOCKERHUB_USERNAME,
-            //         password: process.env.DOCKERHUB_PASSWORD,
-            //     }
-            // });
-
-            // await new Promise((resolve, reject) => {
-            //     this.docker.modem.followProgress(push_stream, (err, res) => {
-            //         if (err) {
-            //             reject(err);
-            //         }
-
-            //         console.log(res);
-            //     });
-            // });
 
             const image_version_id = (await image.inspect())?.Id;
     
@@ -228,19 +219,21 @@ class SimpleHosterDocker {
                 )).map(({ value }) => value).filter(port => port /* a valid port */);
 
                 return {
-                    ports, image_version_id,
-                    logs: results?.map(({ stream }) => `${stream}`)
+                    ports, 
+                    image_version_id
                 }
             }
 
             // for scheduled deploys
             return {
                 ports: null,
-                image_version_id,
-                logs: results?.map(({ stream }) => `${stream}`)
+                image_version_id
             };
         } catch (error) {
+            // TODO: check the error if its a rethrowable as a GrizzyInternal one or just a regular error
             console.log(error);
+            
+            throw new GrizzyInternalDeploymentException(error.message);
         }
     }
 }

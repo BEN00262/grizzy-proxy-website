@@ -1,12 +1,8 @@
-const dotenv = require('dotenv')
-
 const ReverseProxy = require("../../services");
 const { ProjectModel, VersionModel, SecretsModel } = require("../../models");
-const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName } = require("../../utils");
-const { DeploymentEngine } = require('../../engine');
+const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName, check_if_objects_are_similar: check_if_objects_are_not_similar } = require("../../utils");
 const { GrizzySecretsManager } = require('../../engine/secrets');
-const { TemplatesController } = require('../templates');
-const { TemplateExecutionEngine } = require('../../engine/templates');
+const sendToDeploymentQueue = require('../../queues/client');
 
 // during deployments --> we should get an archive of the container then store it in s3
 // create versions
@@ -33,26 +29,49 @@ class ProjectController {
                 repo_url, template, env_keys /* a blob of text matching ENV_KEY=ENV_VALUE format */
             } = req.body;
 
-            const unique_project_name = `${project_name}-${getUniqueSubdomainName()}`.toLowerCase();
+            // check if the project name already exists if so this is a redeployment
+            let project = await ProjectModel.find({ unique_name: project_name });
+            let is_clean_deployment = false;
 
-            const vault_key = GrizzySecretsManager.generateVaultKey();
+            let vault_key = project?.vault_key;
+            let unique_project_name = project?.unique_name;
 
-            // save the versions for this for later
-            const project = await ProjectModel.create({
-               unique_name: unique_project_name,
-               repo_url, deployment_type, template,
-               vault_key: vault_key.encrypted_key
-            //    owner: req.user._id
-            });
+            if (!project) {
+                unique_project_name = `${project_name}-${getUniqueSubdomainName()}`.toLowerCase();
+                is_clean_deployment = true;
+
+                vault_key = GrizzySecretsManager.generateVaultKey().raw_key;
+
+                // save the versions for this for later
+                project = await ProjectModel.create({
+                    unique_name: unique_project_name,
+                    repo_url, deployment_type, template,
+                    vault_key: vault_key.encrypted_key
+                    //    owner: req.user._id
+                });
+            } else {
+                // update anything incase of a change
+                if (
+                    check_if_objects_are_not_similar(
+                        { repo_url, deployment_type, template },
+                        { 
+                            repo_url: project.repo_url, 
+                            deployment_type: project.deployment_type, 
+                            template: project.template 
+                        }
+                    )
+                ) {
+                    project = await ProjectModel.findOneAndUpdate({ _id: project._id }, {
+                        $set: { repo_url, deployment_type, template }
+                    }, { $new: true });
+                }
+            }
 
             // generate a config
-            let config = {
-                // the template is execute through the templates engine 
-                // the generated template is then used to generate the containers
-
-                template: async (folder) => TemplateExecutionEngine.execute_template(
-                    await TemplatesController.getTemplate(template, req.user), folder
-                ),
+            let config = { 
+                template_id: template, 
+                unique_project_name, 
+                deployment_type 
             };
 
             switch(deployment_type) {
@@ -75,116 +94,55 @@ class ProjectController {
                     throw new GrizzyDeployException("Invalid deployment type. Should either be zip, folder or git")
             }
 
-            // gets the logs -- we should save them i think
-            // get the archive of the project
             // we need to get any project keys present for this project
-            const secrets_manager = new GrizzySecretsManager(vault_key.raw_key, [], true /* this is a fresh key */);
+            // if its not a clean deployment we might be overwritting some keys --> take this into consideration
+            let previous_secrets = []; // if its a redeployment
+
+            if (!is_clean_deployment) {
+                // redeployment
+                previous_secrets = await SecretsModel.find({ project: project._id }).lean();
+            }
+
+            const secrets_manager = new GrizzySecretsManager(
+                vault_key, previous_secrets, 
+                is_clean_deployment /* this is a fresh key */
+            );
+
             secrets_manager.generate_secrets_from_env_blob(env_keys ?? "");
 
             const secrets = secrets_manager.saveSecrets() ?? [];
 
             if (secrets?.length) {
                 await SecretsModel.insertMany(
-                    secrets.map(x => ({ ...x, project: project._id }))
+                    secrets.map(x => ({ ...x, project: project._id })),
+                    {
+                        upsert: true, // Perform an upsert operation
+                        setDefaultsOnInsert: true, // Set default values for new documents
+                    }
                 );
             }
 
-            const { ports, image_version_id, logs } = await DeploymentEngine.deploy(
-                unique_project_name, deployment_type, config, secrets_manager
-            );
-
-            // update the metadata
-            // fix the logs streaming
-            const _version = await VersionModel.create({ 
-                image_version_id, logs, project: project._id 
-            })
-
-            // check if this is an active release
-            if (Array.isArray(ports) && ports.length /* active release */) {
-                await ProjectModel.findOneAndUpdate({ active_version: _version._id }, {
-                    _id: project._id
-                });
+            let build_config = {
+                user: { _id: req?.user?._id },
+                ...config,
             }
 
-            // pass over to the provisioning engine ( passed in the next provisioning round )
+            const _version = await VersionModel.create({ project });
+
+            // pass the job to the rabbitmq service
+            await sendToDeploymentQueue({ 
+                project: project._id, 
+                build_config, 
+                vault_key: vault_key.encrypted_key,
+                version: _version._id
+            });
+
             return massage_response({ 
-                status: true,
-                deployment_url: `https://${unique_project_name}.grizzy-deploy.com`
-            }, res, 201);
+                status: true, state: 'deploying',
+                version: _version._id // used to track the deployment we are doing 
+            }, res, 202 /* accepted but awaiting processing */);
         } catch(error) {
             console.log(error)
-            return massage_error(error, res);
-        }
-    }
-
-
-    // get the zip file using multer
-    // used for updates later
-    // TODO: refactor this to avoid Repeat
-    static async deployProject(req, res) {
-        // find a way to stream the reponse from the deployment stuff
-        try {
-            // find a way to pipe ws to this stuff :)
-            // need to actually listen to and proxy the ws from the provisioning engine
-            const { unique_project_name } = req.params;
-
-            const { 
-                deployment_type, deploy_template, repo_url,
-                template_to_use, version
-            } = req.body;
-
-            await ProjectModel.findOneAndUpdate({ 
-                unique_name: unique_project_name /*, owner: req.user._id*/ 
-            }, {
-                template: deploy_template, repo_url,
-                deployment_type
-            }, { $new: true });
-
-            // generate a config
-            let config = {
-                template_to_use,
-                template_version: version
-            };
-
-            switch(deployment_type) {
-                case 'git':
-                    config = { repo_url };
-                    break;
-
-                case 'zip':
-                    config = { zip_file_buffer: req.file.buffer };
-                    break;
-
-                case 'folder':
-                    config = {};
-                    break;
-
-                default:
-                    throw new GrizzyDeployException("Invalid deployment type. Should either be zip, folder or git")
-            }
-
-            // gets the logs -- we should save them i think
-            // get the archive of the project
-            const { ports, image_version_id, logs } = await DeploymentEngine.deploy(
-                unique_project_name, deployment_type, config
-            );
-
-            // update the metadata
-            const _version = await VersionModel.create({ image_version_id, logs, project: project._id })
-
-            // check if this is an active release
-            if (Array.isArray(ports) && ports.length /* active release */) {
-                await ProjectModel.findOneAndUpdate({ active_version: _version._id }, {
-                    _id: project._id
-                });
-            }
-
-            // pass over to the provisioning engine ( passed in the next provisioning round )
-            return massage_response({ 
-                status: true,
-                deployment_url: `http://${unique_project_name}.grizzy-deploy.com`
-            }, res, 201);
-        } catch(error) {
             return massage_error(error, res);
         }
     }

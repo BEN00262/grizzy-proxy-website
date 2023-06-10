@@ -4,11 +4,30 @@ const CryptoJS = require("crypto-js");
 const dotenv = require('dotenv')
 const cryptoRandomString = require('crypto-random-string');
 
+function merge_secrets(secrets) {
+    return secrets.reduce((acc, { key, ...rest }) => {
+        let previousIndex = acc.findIndex(({ key: _key }) => _key === key);
+
+        if (previousIndex > -1) {
+            acc[previousIndex] = {
+                key,
+                ...rest
+            }
+        } else {
+            acc.push({ key, ...rest })
+        }
+
+        return acc;
+    }, []);
+  }
+
 class GrizzySecretsManager {
     constructor(vaultKey, secrets = [], fresh = false) {
         this.vaultKey = fresh ? vaultKey : this.#decryptVaultKey(vaultKey);
         this.fresh = fresh;
-        this.secrets = secrets;
+
+        // decrypt the secrets in the case of a redeployment -- yeah
+        this.secrets = this.#initProjectSecrets(secrets);
     }
 
     static generateVaultKey() {
@@ -23,6 +42,19 @@ class GrizzySecretsManager {
                 generated_key
             ).toString('utf8')*/
         }
+    }
+
+    #initProjectSecrets(secrets) {
+        return this.fresh ? secrets : secrets.map(
+            ({ key, value }) => {
+                return {
+                    key,
+                    value: CryptoJS.AES.decrypt(
+                        value, this.vaultKey,
+                    ).toString(CryptoJS.enc.Utf8)
+                }
+            }
+        )
     }
 
     #decryptVaultKey(vaultKey) {
@@ -44,9 +76,13 @@ class GrizzySecretsManager {
             Buffer.from(env_blob)
         );
 
-        this.secrets = Object.entries(parsed).map(([key, value]) => {
-            return { key, value }
-        });
+        // remove duplicates
+        this.secrets = merge_secrets([
+            ...this.secrets,
+            ...Object.entries(parsed).map(([key, value]) => {
+                return { key, value }
+            })
+        ]);
     }
 
     // decrypt the vault key and use
@@ -79,9 +115,9 @@ class GrizzySecretsManager {
 
     // returns a formatted list of values that can be added to mongodb
     saveSecrets() {
-        return this.fresh ? this.secrets.map(({ key, value }) => {
+        return this.fresh ? this.secrets.map(({ value, ...rest }) => {
             return {
-                key,
+                ...rest,
                 value: CryptoJS.AES.encrypt(
                     value, this.vaultKey
                 )
