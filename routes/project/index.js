@@ -30,7 +30,7 @@ router.delete(
     TemplatesController.deleteTemplate
 );
 
-router.get('/all', ProjectController.getProjects);
+router.get('/all', ProjectController.getMyProjects);
 router.post('/deploy', [limiter], ProjectController.createProject);
 router.get('/versions/:unique_project_name', ProjectController.getProjectVersions);
 router.delete('/:unique_project_name', ProjectController.deleteProject);

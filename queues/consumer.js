@@ -16,6 +16,8 @@ const { VersionModel, ProjectModel, SecretsModel, VersionLogModel } = require('.
 socket.listen(8888);
 
 amqb.connect(process.env.AMQP_SERVER_URI,function (error0, connection){
+    console.log("Started the consumer");
+    
     if (error0){ throw error0; }
 
     connection.createChannel((error1, channel) => {

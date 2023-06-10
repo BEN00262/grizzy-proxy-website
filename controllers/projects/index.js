@@ -9,14 +9,21 @@ const sendToDeploymentQueue = require('../../queues/client');
 
 class ProjectController {
     // create and deploy a project at the same time
-    static async getProjects(req, res) {
+    static async getMyProjects(req, res) {
         try {
+            const { status } = req.query;
 
+            if (status && !["paused", "running"].includes(status)) {
+                throw new GrizzyDeployException("Invalid status")
+            }
+            
             const projects = await ProjectModel.find({
-                owner: req.user._id
-            });
+                // owner: req.user._id
+                ...(status ? { status }: {})
+            }).lean();
 
-            return massage_response({ projects }, res);
+
+            return massage_response({ projects: projects ?? [] }, res);
         } catch(error) {
             return massage_error(error, res);
         }
@@ -138,7 +145,7 @@ class ProjectController {
             });
 
             return massage_response({ 
-                status: true, state: 'deploying',
+                state: 'deploying',
                 version: _version._id // used to track the deployment we are doing 
             }, res, 202 /* accepted but awaiting processing */);
         } catch(error) {
