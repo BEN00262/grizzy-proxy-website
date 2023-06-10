@@ -6,14 +6,35 @@ const decompress = require('decompress');
 const { SimpleHosterDocker } = require("./docker");
 const { SimpleHosterGit } = require("./git");
 const { ReverseProxy } = require('../services');
-const { GrizzyDeployException } = require('../utils');
 const { DomainsModel } = require('../models');
 const { snakeCase } = require('snake-case');
+const { GrizzyInternalDeploymentException } = require('../utils');
 
 class DeploymentEngine {
     constructor() {
         this.git = new SimpleHosterGit();
         this.docker = new SimpleHosterDocker();
+    }
+
+    async change_status(status, image_version_id) {
+        try {
+            switch (status) {
+                case 'pause':
+                    await this.docker.pauseApplication(image_version_id);
+                    break;
+                case 'unpause':
+                    await this.docker.unpauseApplication(image_version_id);
+                    break;
+                default:
+                    throw new GrizzyDeployException("Invalid status change")
+            }
+        } catch (error) {
+            if (error instanceof GrizzyDeployException) {
+                throw error;
+            }
+
+            throw new GrizzyInternalDeploymentException(error.message);
+        }
     }
 
     async deploy(app_name, type /* git | zip | folder */, configs, secrets_manager, logs_handler) {

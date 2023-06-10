@@ -30,6 +30,11 @@ router.delete(
     TemplatesController.deleteTemplate
 );
 
+router.put(
+    '/change-project-status/:application_reference/:status',
+    ProjectController.changeProjectStatus
+);
+
 router.get('/all', ProjectController.getMyProjects);
 router.post('/deploy', [limiter], ProjectController.createProject);
 router.get('/versions/:unique_project_name', ProjectController.getProjectVersions);

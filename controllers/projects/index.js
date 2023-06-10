@@ -3,6 +3,7 @@ const { ProjectModel, VersionModel, SecretsModel } = require("../../models");
 const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName, check_if_objects_are_similar: check_if_objects_are_not_similar } = require("../../utils");
 const { GrizzySecretsManager } = require('../../engine/secrets');
 const sendToDeploymentQueue = require('../../queues/client');
+const { DeploymentEngine } = require("../../engine");
 
 // during deployments --> we should get an archive of the container then store it in s3
 // create versions
@@ -25,6 +26,37 @@ class ProjectController {
 
             return massage_response({ projects: projects ?? [] }, res);
         } catch(error) {
+            return massage_error(error, res);
+        }
+    }
+
+    static async changeProjectStatus(req, res) {
+        try {
+
+            // get the status change we want and then execute that
+            const { status, application_reference } = req.params;
+
+            // get the application to update its status after the pausing has happened
+            const project = await ProjectModel.findOne({ 
+                _id: application_reference 
+            }).populate('active_version');
+
+            // ensure the active version has an actual image id
+            if (["pause", "unpause"].includes(status) && project?.active_version?.image_version_id) {
+                await DeploymentEngine.change_status(
+                    status,
+                    project?.active_version?.image_version_id
+                );
+
+                await ProjectModel.findByIdAndUpdate({ _id: project._id }, {
+                    $set: {
+                        status: status === 'pause' ? 'paused' : 'running'
+                    }
+                })
+            }
+
+            return massage_response({ status: true }, res);
+        } catch (error) {
             return massage_error(error, res);
         }
     }

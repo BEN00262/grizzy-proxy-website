@@ -85,14 +85,11 @@ class SimpleHosterDocker {
     }
 
     // we want to check if there are any containers running for a given image if not recreate and then return the port of the container
-    async unpauseApplication(app_name) {
-        // try to find the image first
-        // FIXME: proper error handling later
-        // const image = this.docker.getImage(app_name);
+    async unpauseApplication(image_version) {
         const containers = await this.docker.listContainers({
-            filters: {
-                "ancestor": app_name
-            }
+            filters: JSON.stringify({
+                "ancestor": [image_version]
+            })
         })
 
         // this should be detected by redbird on the other side and retrigger the url
@@ -106,14 +103,11 @@ class SimpleHosterDocker {
         )
     }
 
-    async pauseApplication(app_name) {
-        // try to find the image first
-        // FIXME: proper error handling later
-        // const image = this.docker.getImage(app_name);
+    async pauseApplication(image_version) {
         const containers = await this.docker.listContainers({
-            filters: {
-                "ancestor": app_name
-            }
+            filters: JSON.stringify({
+                "ancestor": [image_version]
+            })
         });
 
         await Promise.allSettled(
