@@ -17,7 +17,7 @@ socket.listen(8888);
 
 amqb.connect(process.env.AMQP_SERVER_URI,function (error0, connection){
     console.log("Started the consumer");
-    
+
     if (error0){ throw error0; }
 
     connection.createChannel((error1, channel) => {
@@ -57,12 +57,18 @@ amqb.connect(process.env.AMQP_SERVER_URI,function (error0, connection){
                         }
                     );
 
-                    await VersionModel.findOneAndUpdate({ _id: version }, {
-                        $set: {
-                            status: 'deployed',
-                            image_version_id
-                        }
-                    })
+                    await Promise.all([
+                        VersionModel.findOneAndUpdate({ _id: version }, {
+                            $set: {
+                                status: 'deployed',
+                                image_version_id
+                            }
+                        }),
+
+                        ProjectModel.findOneAndUpdate({ _id: project }, {
+                            $set: { status: 'running' }
+                        })
+                    ]);
     
                     // check if this is an active release
                     if (Array.isArray(ports) && ports.length /* active release */) {
