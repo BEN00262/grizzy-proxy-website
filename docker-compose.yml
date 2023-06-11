@@ -6,16 +6,28 @@ services:
     image: traefik:v2.10
     # Enables the web UI and tells Traefik to listen to docker
     command: 
-      # - --api.insecure=true 
+      - --api.insecure=true 
       - --providers.docker
       - --providers.docker.exposedbydefault=false
     ports:
       # The HTTP port
       - "80:80"
       # The Web UI (enabled by --api.insecure=true)
-      # - "8080:8080"
+      - "8080:8080"
+
+    # 404 page handler  
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.custom-errors.errors.status=404"
+      - "traefik.http.middlewares.custom-errors.errors.service=error-pages@file"
+      - "traefik.http.routers.traefik.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.traefik.entrypoints=web"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=custom-errors@docker"
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./error-pages:/error-pages
 
     networks:
       - default
