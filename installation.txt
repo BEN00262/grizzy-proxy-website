@@ -43,3 +43,6 @@ server {
 }
 
 apt-get install -y python2 python3 libkrb5-dev gcc openssl libssh2-1-dev g++ make ( for nodegit )
+
+curl -SL https://github.com/docker/compose/releases/download/v2.18.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
