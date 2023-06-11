@@ -4,13 +4,16 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "pm2 start ecosystem.config.js --update-env",
+    "reload": "pm2 reload ecosystem.config.js --update-env",
+    "restart": "pm2 restart ecosystem.config.js --update-env"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@sendgrid/mail": "^7.7.0",
+    "amqplib": "^0.10.3",
     "bcrypt": "^5.1.0",
     "consola": "^2.15.3",
     "cors": "^2.8.5",
@@ -20,6 +23,7 @@
     "dockerode": "^3.3.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
     "find-config": "^1.0.0",
     "git-clone": "^0.2.0",
     "google-auth-library": "^8.8.0",
@@ -35,6 +39,7 @@
     "semver": "^7.5.1",
     "simple-git": "^3.18.0",
     "snake-case": "^3.0.4",
+    "socket.io": "^4.6.2",
     "tar-fs": "^2.1.1",
     "tar-stream": "^3.0.0",
     "tmp": "^0.2.1",

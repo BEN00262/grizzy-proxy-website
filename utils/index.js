@@ -8,6 +8,12 @@ class GrizzyDeployException extends Error {
     }
 }
 
+class GrizzyInternalDeploymentException extends Error {
+    constructor(message) {
+        super(message);
+    }
+}
+
 /**
  * @description return a massaged error response ( common in the app )
  * @param {Error} error
@@ -25,22 +31,7 @@ const massage_error = (error, res, status_code = 400) => {
                 isImpactRootException ? error.message : "There was a problem. Please try again later."
             ]
         }
-    })
-
-    // if not impact rooms Exception send an email to oliver an myself :)
-    // if (!isImpactRootException) {
-    //     // we dont want to make the whole function async
-    //     ;(async () => {
-    //       const emails_to_send_to = (process.env.TYPEFORM_TELEMETRY_EMAIL || "").split(",").filter(u => u).map(x => x.trim())
-
-    //       await sendTextEmail(
-    //             emails_to_send_to[0], // the first guy
-    //             `SERVER ERROR: ( ${process.env.MICROSERVICE_NAME} ) ==>  ${error.message}`,
-    //             error.stack,
-    //             emails_to_send_to.slice(1)
-    //       )
-    //     })()
-    // }
+    });
 }
 
 /**
@@ -75,13 +66,28 @@ const signJwtToken = payload => {
  */
 const verifyJwtToken = jwtToken => jwt.verify(jwtToken, process.env.JWT_SECRET);
 
+function check_if_objects_are_similar(obj1, obj2) {
+    const changes = {};
+  
+    // Iterate over all properties of obj2
+    for (let key in obj2) {
+      // Check if the property exists in obj1 and has a different value
+      if (obj2.hasOwnProperty(key) && obj1.hasOwnProperty(key) && obj1[key] !== obj2[key]) {
+        changes[key] = obj2[key]; // Add the changed value to the changes object
+      }
+    }
+  
+    return !!Object.keys(changes).length;
+  }
 
 module.exports = {
     GrizzyDeployException,
+    GrizzyInternalDeploymentException,
     massage_error,
     massage_response,
     signJwtToken,
     verifyJwtToken,
+    check_if_objects_are_similar,
     getUniqueSubdomainName: () => {
         return uniqueNamesGenerator({
             dictionaries: [colors, adjectives, animals],

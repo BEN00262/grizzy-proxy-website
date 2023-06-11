@@ -12,6 +12,12 @@ const projectSchema = new mongoose.Schema({
         required: true
     },
 
+    status: {
+        type: String,
+        enum: ["paused", "running", "deploying"],
+        default: "running"
+    },
+
     // depends on if its a zip, repo, if the deployment type is not a git this is irrelevant
     repo_url: {
         type: String
