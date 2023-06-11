@@ -81,7 +81,7 @@ class ProjectController {
                 unique_project_name = `${project_name}-${getUniqueSubdomainName()}`.toLowerCase();
                 is_clean_deployment = true;
 
-                vault_key = GrizzySecretsManager.generateVaultKey().raw_key;
+                vault_key = GrizzySecretsManager.generateVaultKey();
 
                 // save the versions for this for later
                 project = await ProjectModel.create({
@@ -145,7 +145,7 @@ class ProjectController {
             }
 
             const secrets_manager = new GrizzySecretsManager(
-                vault_key, previous_secrets, 
+                is_clean_deployment ? vault_key.raw_key : vault_key, previous_secrets, 
                 is_clean_deployment /* this is a fresh key */
             );
 
@@ -172,9 +172,9 @@ class ProjectController {
 
             // pass the job to the rabbitmq service
             await sendToDeploymentQueue({ 
-                project: project._id, 
+                project: project._id,
                 build_config, 
-                vault_key: vault_key.encrypted_key,
+                vault_key: is_clean_deployment ? vault_key.encrypted_key : vault_key,
                 version: _version._id
             });
 
