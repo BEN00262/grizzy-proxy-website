@@ -92,8 +92,8 @@ class DeploymentEngine {
         const {image_version_id, logs } = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
-            [...env, ...secrets_manager.getProjectSecrets()], logs_handler,
-            logs_handler, true, // run by default
+            [...env, ...secrets_manager.getProjectSecrets()], 
+            true, // run by default
         );
 
         // wipe the temp directory on exit
@@ -131,7 +131,7 @@ class DeploymentEngine {
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
             [...env, ...secrets_manager.getProjectSecrets()],
-            logs_handler, true, // run by default
+            true, // run by default
         );
 
         // pass the image name to redbird to assign it
@@ -168,7 +168,7 @@ class DeploymentEngine {
                 app_name,
                 directory_path,
                 [...env, ...secrets_manager.getProjectSecrets()],
-                logs_handler, true, // run by default
+                true, // run by default
             );
             
             // wipe the temp directory on exit
