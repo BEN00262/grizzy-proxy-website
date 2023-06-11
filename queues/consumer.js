@@ -11,6 +11,7 @@ const { TemplateExecutionEngine } = require('../engine/templates');
 const { TemplatesController } = require('../controllers/templates');
 const { DeploymentEngine } = require('../engine');
 const { VersionModel, ProjectModel, SecretsModel, VersionLogModel } = require('../models');
+const { GrizzySecretsManager } = require('../engine/secrets');
 
 // we create socket connections where someone can turn to and listen on
 // we can actually do builds of react deployments --- yeeeay
@@ -39,6 +40,11 @@ socket.listen(8888);
                             project, build_config, 
                             vault_key, version 
                         } = JSON.parse(msg.content.toString());
+
+                        console.log({ 
+                            project, build_config, 
+                            vault_key, version 
+                        })
         
                         let config = {
                             ...build_config,
