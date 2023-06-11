@@ -35,7 +35,10 @@ socket.listen(8888);
         
                 channel.consume(process.env.DEPLOYMENT_QUEUE, async msg => {
                     try {
-                        const { project, build_config, vault_key } = JSON.parse(msg.content.toString());
+                        const { 
+                            project, build_config, 
+                            vault_key, version 
+                        } = JSON.parse(msg.content.toString());
         
                         let config = {
                             ...build_config,
