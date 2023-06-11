@@ -67,6 +67,8 @@ socket.listen(8888);
                                 build_config.unique_project_name, 
                                 build_config.deployment_type, config, 
                                 secrets_manager, async (log) => {
+                                    console.log(log);
+                                    
                                     await VersionLogModel.create({ log, version });
                                     socket.emit(version, { log, status: 'continue' });
                                 }

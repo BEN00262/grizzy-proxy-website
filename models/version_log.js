@@ -16,6 +16,12 @@ const versionlogSchema = new mongoose.Schema({
     },
     // autoCreate: false,
     // expireAfterSeconds: 86400
-  });
+});
+
+versionlogSchema.pre('save', function (next) {
+    this.timestamp = new Date();
+    next();
+});
+  
 
 module.exports = mongoose.model('version_log', versionlogSchema);
