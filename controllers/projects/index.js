@@ -12,16 +12,18 @@ class ProjectController {
     // create and deploy a project at the same time
     static async getMyProjects(req, res) {
         try {
-            const { status } = req.query;
+            let { status } = req.query;
 
-            if (status && !["paused", "running"].includes(status)) {
+            if (status && !["paused", "running", "all"].includes(status)) {
                 throw new GrizzyDeployException("Invalid status")
             }
+
+            status = status === "all" ? null : status;
             
             const projects = await ProjectModel.find({
                 // owner: req.user._id
                 ...(status ? { status }: {})
-            }).lean();
+            }).select("_id unique_name deployment_type createdAt").lean();
 
 
             return massage_response({ projects: projects ?? [] }, res);
@@ -69,7 +71,7 @@ class ProjectController {
             } = req.body;
 
             // check if the project name already exists if so this is a redeployment
-            let project = await ProjectModel.find({ unique_name: project_name });
+            let project = await ProjectModel.findOne({ unique_name: project_name });
             let is_clean_deployment = false;
 
             let vault_key = project?.vault_key;
