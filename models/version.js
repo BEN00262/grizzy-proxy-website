@@ -11,6 +11,11 @@ const versionSchema = new mongoose.Schema({
         enum: ['deploying', 'failed', 'deployed']
     },
 
+    // deploy logs
+    logs: {
+        type: String
+    },
+
     project: {
         type: mongoose.Types.ObjectId,
         ref: 'project',

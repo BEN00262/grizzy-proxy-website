@@ -10,8 +10,11 @@ const socket = require('socket.io')();
 const { TemplateExecutionEngine } = require('../engine/templates');
 const { TemplatesController } = require('../controllers/templates');
 const { DeploymentEngine } = require('../engine');
-const { VersionModel, ProjectModel, SecretsModel, VersionLogModel } = require('../models');
+const { 
+    VersionModel, ProjectModel, SecretsModel
+} = require('../models');
 const { GrizzySecretsManager } = require('../engine/secrets');
+const { GrizzyInternalDeploymentException } = require('../utils');
 
 // we create socket connections where someone can turn to and listen on
 // we can actually do builds of react deployments --- yeeeay
@@ -63,22 +66,18 @@ socket.listen(8888);
                         );
         
                         try {
-                            const { ports, image_version_id } = await DeploymentEngine.deploy(
+                            const { image_version_id, logs } = await DeploymentEngine.deploy(
                                 build_config.unique_project_name, 
                                 build_config.deployment_type, config, 
-                                secrets_manager, async (log) => {
-                                    console.log(log);
-                                    
-                                    await VersionLogModel.create({ log, version });
-                                    socket.emit(version, { log, status: 'continue' });
-                                }
+                                secrets_manager
                             );
         
                             await Promise.all([
                                 VersionModel.findOneAndUpdate({ _id: version }, {
                                     $set: {
                                         status: 'deployed',
-                                        image_version_id
+                                        image_version_id,
+                                        logs
                                     }
                                 }),
         
@@ -88,12 +87,10 @@ socket.listen(8888);
                             ]);
             
                             // check if this is an active release
-                            if (Array.isArray(ports) && ports.length /* active release */) {
-                                await ProjectModel.findOneAndUpdate({ active_version: _version._id }, {
-                                    _id: project
-                                });
-                            }
-        
+                            await ProjectModel.findOneAndUpdate(
+                                { active_version: version }, 
+                                { _id: project }
+                            );
                         } catch (error) {
                             // check the type of error thrown --> is it a genuine Deployment failure for some reason
                             if (error instanceof GrizzyInternalDeploymentException) {

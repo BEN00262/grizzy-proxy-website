@@ -1,4 +1,5 @@
-const ReverseProxy = require("../../services");
+// const ReverseProxy = require("../../services");
+const humanTime = require('human-time');
 const { ProjectModel, VersionModel, SecretsModel } = require("../../models");
 const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName, check_if_objects_are_similar: check_if_objects_are_not_similar } = require("../../utils");
 const { GrizzySecretsManager } = require('../../engine/secrets');
@@ -23,10 +24,19 @@ class ProjectController {
             const projects = await ProjectModel.find({
                 // owner: req.user._id
                 ...(status ? { status }: {})
-            }).select("_id unique_name deployment_type createdAt").lean();
+            }).select("_id unique_name createdAt").lean();
 
 
-            return massage_response({ projects: projects ?? [] }, res);
+            return massage_response({ 
+                projects: (projects ?? []).map(({ unique_name, _id, deployment_type, createdAt }) => {
+                    return {
+                        reference: _id,
+                        unique_name,
+                        url: `https://${unique_name}.grizzy-deploy.com`,
+                        createdAt: humanTime(new Date(createdAt))
+                    }
+                })
+            }, res);
         } catch(error) {
             return massage_error(error, res);
         }
@@ -34,7 +44,6 @@ class ProjectController {
 
     static async changeProjectStatus(req, res) {
         try {
-
             // get the status change we want and then execute that
             const { status, application_reference } = req.params;
 
@@ -216,24 +225,24 @@ class ProjectController {
                 owner: req.user._id
             });
 
-            if (project) {
-                // delete all the versions
-                await VersionModel.deleteMany({
-                    _id: { '$in': project.versions }
-                });
+            // if (project) {
+            //     // delete all the versions
+            //     await VersionModel.deleteMany({
+            //         _id: { '$in': project.versions }
+            //     });
 
-                // get any running containers for this and delete them
+            //     // get any running containers for this and delete them
 
-                for (const local_uri of project?.local_uri) {
-                    // find a way to properly do this
-                    ReverseProxy.unregister(project?.public_uri, local_uri)
-                }
+            //     for (const local_uri of project?.local_uri) {
+            //         // find a way to properly do this
+            //         ReverseProxy.unregister(project?.public_uri, local_uri)
+            //     }
 
-                // send a delete message to the provisioning engine
+            //     // send a delete message to the provisioning engine
 
-                // wipe the record
-                await ProjectModel.deleteOne({  _id: project_id })
-            }
+            //     // wipe the record
+            //     await ProjectModel.deleteOne({  _id: project_id })
+            // }
     
             return massage_response({ status: true }, res);
         } catch(error) {

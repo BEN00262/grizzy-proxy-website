@@ -4,6 +4,5 @@ module.exports = {
     VersionModel: require('./version'),
     DomainsModel: require('./domains'),
     SecretsModel: require('./secret'),
-    TemplateModel: require('./templates'),
-    VersionLogModel: require('./version_log')
+    TemplateModel: require('./templates')
 }

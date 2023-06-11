@@ -5,9 +5,7 @@ const decompress = require('decompress');
 
 const { SimpleHosterDocker } = require("./docker");
 const { SimpleHosterGit } = require("./git");
-const { ReverseProxy } = require('../services');
 const { DomainsModel } = require('../models');
-const { snakeCase } = require('snake-case');
 const { GrizzyInternalDeploymentException } = require('../utils');
 
 class DeploymentEngine {
@@ -37,55 +35,46 @@ class DeploymentEngine {
         }
     }
 
-    async deploy(app_name, type /* git | zip | folder */, configs, secrets_manager, logs_handler) {
+    async deploy(
+        app_name, type /* git | zip | folder */, 
+        configs, secrets_manager
+    ) {
         let instance_results = {};
         
-        const _app_name = snakeCase(app_name);
+        // const _app_name = snakeCase(app_name);
 
         switch (type) {
             case 'git':
                 instance_results = await this.#deployFromGit(
-                    _app_name, configs /*repo_url, template_to_use, version*/, 
-                    secrets_manager, logs_handler
+                    app_name, configs /*repo_url, template_to_use, version*/, 
+                    secrets_manager
                 );
                 break;
 
             case 'zip':
                 instance_results = await this.#deployFromZip(
-                    _app_name, configs /* zip_file_buffer, template_to_use, version */, 
-                    secrets_manager, logs_handler
+                    app_name, configs /* zip_file_buffer, template_to_use, version */, 
+                    secrets_manager
                 );
                 break;
 
             case 'wordpress':
                 instance_results = await this.#deployWordpress(
-                    _app_name, configs, 
-                    secrets_manager, logs_handler
+                    app_name, configs, 
+                    secrets_manager
                 );
                 break;
             default:
                 throw new Error('Unsupported deployment type');
         }
 
-        if (Array.isArray(instance_results?.ports) && instance_results?.ports.length) {
-            // attach the url at this point
-            // store a list of these in the db for reregistration on bootup
-            for (const port of instance_results?.ports) {
-                // ssh has been automatically catered for by AWS
-                ReverseProxy.register(`${app_name}.grizzy-deploy.com`,  `http://127.0.0.1:${port}`);
-            }
-
-            // save the registration for rebootup
-            await DomainsModel.create({ 
-                sub_domain: app_name, 
-                image_version_id: instance_results?.image_version_id
-            });
-        }
-
         return instance_results;
     }
 
-    async #deployWordpress(app_name, configs, secrets_manager, logs_handler) {
+    async #deployWordpress(
+        app_name, configs, 
+        secrets_manager
+    ) {
         const { cleanup, path: directory_path } = await tmp.dir({
             keep: false,
             prefix:  'deploy-',
@@ -100,7 +89,7 @@ class DeploymentEngine {
         );
 
         // deploy the code
-        const {ports, image_version_id, logs } = await this.docker.createImage(
+        const {image_version_id, logs } = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
             [...env, ...secrets_manager.getProjectSecrets()], logs_handler,
@@ -110,11 +99,14 @@ class DeploymentEngine {
         // wipe the temp directory on exit
         await cleanup();
 
-        return { ports, image_version_id, logs };
+        return { image_version_id, logs };
     }
 
     // deploy from git
-    async #deployFromZip(app_name /* this is the name of the image too */, configs, secrets_manager, logs_handler) {
+    async #deployFromZip(
+        app_name /* this is the name of the image too */, configs, 
+        secrets_manager
+    ) {
         const { cleanup, path: directory_path } = await tmp.dir({
             keep: false,
             prefix:  'deploy-',
@@ -135,7 +127,7 @@ class DeploymentEngine {
         );
 
         // deploy the code
-        const { ports, image_version_id, logs } = await this.docker.createImage(
+        const { image_version_id, logs } = await this.docker.createImage(
             app_name, // name of the app to be deployed
             directory_path, // the temp directoru holding our code while we are doing deployments
             [...env, ...secrets_manager.getProjectSecrets()],
@@ -147,11 +139,14 @@ class DeploymentEngine {
         // wipe the temp directory on exit
         await cleanup();
 
-        return { ports, image_version_id, logs };
+        return { image_version_id, logs };
     }
 
     // deploy from git
-    async #deployFromGit(app_name /* this is the name of the image too */, configs, secrets_manager, logs_handler) {
+    async #deployFromGit(
+        app_name /* this is the name of the image too */, configs, 
+        secrets_manager
+    ) {
         try {
             const { cleanup, path: directory_path } = await tmp.dir({
                 keep: false,
@@ -169,7 +164,7 @@ class DeploymentEngine {
             );
     
             // deploy the code
-            const {ports, image_version_id, logs } = await this.docker.createImage(
+            const { image_version_id, logs } = await this.docker.createImage(
                 app_name,
                 directory_path,
                 [...env, ...secrets_manager.getProjectSecrets()],
@@ -179,7 +174,7 @@ class DeploymentEngine {
             // wipe the temp directory on exit
             await cleanup();
     
-            return { ports, image_version_id, logs };
+            return { image_version_id, logs };
         } catch(error) {
             console.log(error)
         }

@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const { ProjectRouter, UserRouter } = require('./routes');
+// const { rehydrate_domains } = require('./services');
 
 const PORT = process.env.PORT || 3002;
 
@@ -20,10 +21,18 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/project', ProjectRouter);
 app.use('/user', UserRouter);
 
+/* 
+    switch to using traefik as the reverse proxy
+    figure out how to use s3 as the registry for storing images and stuff
+*/
 
 ;(async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI)
+        await mongoose.connect(process.env.MONGO_URI);
+
+        // DEPRACTED: switching to traefik
+        // rehyrate the domains first
+        // await rehydrate_domains();
 
         server.listen(PORT, () => {
             console.log('server started')
