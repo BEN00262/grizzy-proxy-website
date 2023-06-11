@@ -9,5 +9,5 @@ http:
       # basic round robin load balancer  
       loadBalancer:
         servers:
-          - url: "http://127.0.0.1:3002"
-          - url: "http://127.0.0.1:3002"
+          - url: "http://0.0.0.0:3002"
+          - url: "http://0.0.0.0:3002"
