@@ -1,13 +1,12 @@
 http:
   routers:
-    grizz-deploy-router:
+    grizzy-deploy-router:
       rule: "Host(`deploy.grizzy-deploy.com`)"
-      service: grizz-deploy
+      service: grizzy-deploy
+      priority: 2
 
   services:
-    grizz-deploy:
-      # basic round robin load balancer  
+    grizzy-deploy:
       loadBalancer:
         servers:
-          - url: "http://0.0.0.0:3002"
-          - url: "http://0.0.0.0:3002"
+          - url: "http://localhost:3002/"

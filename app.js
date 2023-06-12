@@ -30,10 +30,6 @@ app.use('/user', UserRouter);
     try {
         await mongoose.connect(process.env.MONGO_URI);
 
-        // DEPRACTED: switching to traefik
-        // rehyrate the domains first
-        // await rehydrate_domains();
-
         server.listen(PORT, () => {
             console.log('server started')
         });

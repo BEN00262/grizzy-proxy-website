@@ -2,27 +2,33 @@ version: '3.7'
 
 services:
   reverse-proxy:
-    image: traefik:v2.10
+    image: traefik:latest
     container_name: traefik
     security_opt:
       - no-new-privileges:true
     restart: always
 
     command: 
-      - --api.insecure=true 
+      - --api.insecure=true
+      # - --api.secure=true
+      - --providers.file.filename=/etc/traefik/grizzy-deploy.yml
       - --providers.docker
       - --providers.docker.exposedbydefault=false
-      - --providers.file.filename=/etc/traefik/grizzy-deploy.yml
       - --entrypoints.webinsecure.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker.network=traefik
 
     ports:
       # The HTTP port
       - 80:80
+      - 443:443
       # The Web UI (enabled by --api.insecure=true)
       - 8080:8080
 
     labels:
       traefik.enable: true
+
+      traefik.http.middlewares.test-compress.compress: true
 
       # attach the error middleware here
       # traefik.http.routers.traefik.middlewares: error-pages-middleware
@@ -31,8 +37,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./grizzy-deploy.yml:/etc/traefik/grizzy-deploy.yml
 
-    networks:
-      - traefik
+    environment:
+      - "TRAEFIK_LOG_LEVEL=DEBUG"
+
+    # networks:
+    #   - traefik
 
   nginx-error:
     image: nginx:latest
@@ -60,3 +69,4 @@ services:
 
 networks:
   traefik:
+    name: traefik
