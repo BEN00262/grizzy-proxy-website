@@ -1,7 +1,7 @@
 {
   "name": "grizzy-deploy-workspace",
   "workspaces": [
-    "grizzy-deploy-main",
+    "grizzy-deploy",
     "grizzy-deploy-consumer",
     "grizzy-deploy-shared"
   ],

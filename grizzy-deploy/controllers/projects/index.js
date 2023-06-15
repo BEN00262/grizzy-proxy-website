@@ -12,7 +12,7 @@ const {
 
 const { GrizzySecretsManager } = require('grizzy-deploy-shared/engine/secrets');
 // move this to the shared package
-const sendToDeploymentQueue = require('grizzy-deploy-shared/queues/client');
+const {sendToDeploymentQueue} = require('grizzy-deploy-shared/queues/client');
 const { DeploymentEngine } = require("grizzy-deploy-shared/engine");
 
 // during deployments --> we should get an archive of the container then store it in s3
