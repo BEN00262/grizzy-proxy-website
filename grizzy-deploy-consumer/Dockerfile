@@ -6,6 +6,7 @@ WORKDIR /app
 
 COPY ["package.json", "package-lock.json*", "./"]
 
+# this should also have the ability to manipulate docker socket
 # local verdaccio registry avoid paying for npm :^)
 RUN npm set registry "http://172.17.0.2:4873/"
 
