@@ -1,10 +1,19 @@
 // const ReverseProxy = require("../../services");
 const humanTime = require('human-time');
-const { ProjectModel, VersionModel, SecretsModel } = require("../../models");
-const { massage_error, massage_response, GrizzyDeployException, getUniqueSubdomainName, check_if_objects_are_similar: check_if_objects_are_not_similar } = require("../../utils");
-const { GrizzySecretsManager } = require('../../engine/secrets');
-const sendToDeploymentQueue = require('../../queues/client');
-const { DeploymentEngine } = require("../../engine");
+const { 
+    ProjectModel, VersionModel, SecretsModel 
+} = require("grizzy-deploy-shared/models");
+
+const { 
+    massage_error, massage_response, 
+    GrizzyDeployException, getUniqueSubdomainName, 
+    check_if_objects_are_similar: check_if_objects_are_not_similar 
+} = require("grizzy-deploy-shared/utils");
+
+const { GrizzySecretsManager } = require('grizzy-deploy-shared/engine/secrets');
+// move this to the shared package
+const sendToDeploymentQueue = require('grizzy-deploy-shared/queues/client');
+const { DeploymentEngine } = require("grizzy-deploy-shared/engine");
 
 // during deployments --> we should get an archive of the container then store it in s3
 // create versions
@@ -28,7 +37,7 @@ class ProjectController {
 
 
             return massage_response({ 
-                projects: (projects ?? []).map(({ unique_name, _id, deployment_type, createdAt }) => {
+                projects: (projects ?? []).map(({ unique_name, _id, createdAt }) => {
                     return {
                         reference: _id,
                         unique_name,

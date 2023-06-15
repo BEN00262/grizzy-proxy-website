@@ -5,7 +5,7 @@ const decompress = require('decompress');
 
 const { SimpleHosterDocker } = require("./docker");
 const { SimpleHosterGit } = require("./git");
-const { DomainsModel } = require('../models');
+// const { DomainsModel } = require('../models');
 const { GrizzyInternalDeploymentException } = require('../utils');
 
 class DeploymentEngine {

@@ -28,4 +28,4 @@ const sendToDeploymentQueue = ({
     })
 });
 
-module.exports = sendToDeploymentQueue;
+module.exports = { sendToDeploymentQueue };

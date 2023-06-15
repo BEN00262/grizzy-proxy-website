@@ -11,12 +11,17 @@ services:
     command: 
       - --api.insecure=true
       # - --api.secure=true
-      - --providers.file.filename=/etc/traefik/grizzy-deploy.yml
+      - --log.level=DEBUG
       - --providers.docker
       - --providers.docker.exposedbydefault=false
+      - --providers.docker.watch=true
+      - --providers.docker.useBindPortIP=true
+      - --providers.docker.allowEmptyServices=true
+      - --providers.docker.network=traefik
+
+      # entrypoints configuration
       - --entrypoints.webinsecure.address=:80
       - --entrypoints.websecure.address=:443
-      - --providers.docker.network=traefik
 
     ports:
       # The HTTP port
@@ -36,12 +41,26 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./grizzy-deploy.yml:/etc/traefik/grizzy-deploy.yml
+    # environment:
+    #   - "TRAEFIK_LOG_LEVEL=DEBUG"
 
-    environment:
-      - "TRAEFIK_LOG_LEVEL=DEBUG"
+    networks:
+      - traefik
 
-    # networks:
-    #   - traefik
+  grizzy-main:
+    image: sololearner00262/grizzy-deploy-main:latest
+
+    networks:
+      - traefik
+
+    labels:
+      traefik.enable: true
+
+      traefik.http.routers.grizzy-deploy.rule: Host(`deploy.localhost`)
+
+  # not exposed to traefik but listens for events from cloudAMQP
+  grizzy-consumer:
+    image: sololearner00262/grizzy-deploy-consumer:latest
 
   nginx-error:
     image: nginx:latest
@@ -65,7 +84,6 @@ services:
       traefik.http.middlewares.error-pages-middleware.errors.service: error-pages-service
       traefik.http.middlewares.error-pages-middleware.error.query: /{status}.html
       traefik.http.services.error-pages-service.loadbalancer.server.port: 80
-
 
 networks:
   traefik:

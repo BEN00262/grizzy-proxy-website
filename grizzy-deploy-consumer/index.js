@@ -5,20 +5,20 @@ require('dotenv').config({
 
 const amqb = require('amqplib/callback_api');
 const mongoose = require('mongoose');
-const socket = require('socket.io')();
+// const socket = require('socket.io')();
 
-const { TemplateExecutionEngine } = require('../engine/templates');
-const { TemplatesController } = require('../controllers/templates');
-const { DeploymentEngine } = require('../engine');
+const { TemplateExecutionEngine } = require('grizzy-deploy-shared/engine/templates');
+const { DeploymentEngine } = require('grizzy-deploy-shared/engine');
 const { 
     VersionModel, ProjectModel, SecretsModel
-} = require('../models');
-const { GrizzySecretsManager } = require('../engine/secrets');
-const { GrizzyInternalDeploymentException } = require('../utils');
+} = require('grizzy-deploy-shared/models');
+const { GrizzySecretsManager } = require('grizzy-deploy-shared/engine/secrets');
+const { GrizzyInternalDeploymentException } = require('grizzy-deploy-shared/utils');
+const { TemplatesGenerator } = require('./utils');
 
 // we create socket connections where someone can turn to and listen on
 // we can actually do builds of react deployments --- yeeeay
-socket.listen(8888);
+// socket.listen(8888);
 
 // start mongodb connection first
 ;(async () => {
@@ -52,7 +52,7 @@ socket.listen(8888);
                         let config = {
                             ...build_config,
                             template: async (folder) => TemplateExecutionEngine.execute_template(
-                                await TemplatesController.getTemplate(
+                                await TemplatesGenerator.getTemplate(
                                     build_config.template_id, build_config.user
                                 ), folder
                             ),

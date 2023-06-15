@@ -7,7 +7,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const { ProjectRouter, UserRouter } = require('./routes');
-// const { rehydrate_domains } = require('./services');
 
 const PORT = process.env.PORT || 3002;
 
@@ -33,6 +32,7 @@ app.use('/user', UserRouter);
         server.listen(PORT, () => {
             console.log('server started')
         });
+        
     } catch(error) {
         console.log(error);
     }

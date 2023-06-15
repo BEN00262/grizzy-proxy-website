@@ -1,7 +1,7 @@
 http:
   routers:
     grizzy-deploy-router:
-      rule: "Host(`deploy.grizzy-deploy.com`)"
+      rule: "Host(`deploy.localhost`)"
       service: grizzy-deploy
       priority: 2
 

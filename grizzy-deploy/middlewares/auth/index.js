@@ -1,5 +1,5 @@
-const { UserModel } = require("../../models");
-const { massage_error, verifyJwtToken } = require("../../utils");
+const { UserModel } = require("grizzy-deploy-shared/models");
+const { massage_error, verifyJwtToken } = require("grizzy-deploy-shared/utils");
 
 module.exports = {
     EnsureIsAuthenticated: async (req, res, next) => {

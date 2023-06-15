@@ -1,5 +1,5 @@
-const { TemplateModel } = require("../../models");
-const { massage_error, massage_response } = require("../../utils");
+const { TemplateModel } = require("grizzy-deploy-shared/models");
+const { massage_error, massage_response } = require("grizzy-deploy-shared/utils");
 
 class TemplatesController {
     static async getTemplates(req, res) {

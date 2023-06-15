@@ -1,0 +1,50 @@
+{
+  "name": "grizzy-deploy-main",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "docker:build": "docker build -t sololearner00262/grizzy-deploy-main .",
+    "docker:publish": "docker push sololearner00262/grizzy-deploy-main"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "grizzy-deploy-shared": "^1.0.1",
+    "bcrypt": "^5.1.0",
+    "consola": "^2.15.3",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.1.1",
+    "crypto-random-string": "^3.2.0",
+    "decompress": "^4.2.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
+    "find-config": "^1.0.0",
+    "google-auth-library": "^8.8.0",
+    "handlebars": "^4.7.7",
+    "http-proxy": "^1.18.1",
+    "human-time": "^0.0.2",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.0.3",
+    "nanoid": "^3.3.3",
+    "semver": "^7.5.1",
+    "snake-case": "^3.0.4",
+    "socket.io": "^4.6.2",
+    "tar-fs": "^2.1.1",
+    "tar-stream": "^3.0.0",
+    "tmp": "^0.2.1",
+    "tmp-promise": "^3.0.3",
+    "unique-names-generator": "^4.7.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BEN00262/grizzy-proxy-website.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BEN00262/grizzy-proxy-website/issues"
+  },
+  "homepage": "https://github.com/BEN00262/grizzy-proxy-website#readme",
+  "description": ""
+}

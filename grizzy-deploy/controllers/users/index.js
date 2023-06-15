@@ -1,6 +1,6 @@
 const { OAuth2Client } = require('google-auth-library');
-const { UserModel } = require("../../models");
-const { massage_error, massage_response, signJwtToken } = require("../../utils");
+const { UserModel } = require("grizzy-deploy-shared/models");
+const { massage_error, massage_response, signJwtToken } = require("grizzy-deploy-shared/utils");
 
 class UserController {
     static async login(req, res) {
